@@ -17,7 +17,7 @@ app.use(cookieParser());
 
 // Routes
 app.use('/', healthRoutes);
-app.use('/webhook', webhookRoutes);
+app.use('/api', webhookRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
