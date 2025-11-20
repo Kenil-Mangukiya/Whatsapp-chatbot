@@ -12,7 +12,7 @@ const healthService = new HealthCheckService();
 // Initialize health service and perform initial health check
 async function initializeServer() {
     try {
-        console.log('🚀 Starting WhatsApp Chatbot Server...');
+        console.log('🚀 Starting Server...');
         
         // Initialize health service
         await healthService.initializeDatabase();
