@@ -3,7 +3,7 @@ import apiResponse from "../utils/apiResponse.js";
 import apiError from "../utils/apiError.js";
 import { sendWelcomeMessageTemplate } from "../services/whatsapp.service.js";
 
-export const webhook = asyncHandler(async (req, res) => {
+export const whatsappWebhook = asyncHandler(async (req, res) => {
     console.log("webhook received : ", req.body);
     if(!req.body)
     {
@@ -26,5 +26,3 @@ export const webhook = asyncHandler(async (req, res) => {
         return res.status(500).json(new apiError(500, "Something went wrong", error.message));
     }
 })
-
-export default webhook;

@@ -1,8 +1,8 @@
-import webhook from "../controllers/webhook.controller.js";
+import { whatsappWebhook } from "../controllers/whatsapp.webhook.controller.js";
 import express from "express";
 
 const webhookRoutes = express.Router();
 
-webhookRoutes.post("/webhook", webhook);
+webhookRoutes.post("/whatsapp/webhook", whatsappWebhook);
 
 export default webhookRoutes;
