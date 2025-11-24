@@ -1,10 +1,8 @@
 import express from "express";
-import { registerUser, logInUser } from "../controllers/user.controller.js";
-import upload from "../middleware/multer.middleware.js";
+import { sendWhatsppOTP } from "../controllers/user.controller.js";
 
 const userRoutes = express.Router();
 
-userRoutes.post("/register", upload.single("avatar"), registerUser);
-userRoutes.post("/login", logInUser);
+userRoutes.post("/send-otp", sendWhatsppOTP);
 
 export { userRoutes };

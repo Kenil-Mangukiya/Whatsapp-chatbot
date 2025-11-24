@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getCallHistory, CallHistoryItem } from '../services/apis/callAPI';
 import toast from 'react-hot-toast';
 
@@ -115,89 +115,6 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
     setSelectedCall(null);
   };
 
-  // Export call history to CSV
-  const handleExportReport = () => {
-    if (filteredCalls.length === 0) {
-      toast.error('No calls to export');
-      return;
-    }
-
-    try {
-      // Prepare CSV headers
-      const headers = [
-        'Time',
-        'Phone Number',
-        'Customer Name',
-        'Location',
-        'Issue',
-        'Duration',
-        'Sentiment',
-        'Disconnection Reason',
-        'Transcript'
-      ];
-
-      // Prepare CSV rows
-      const rows = filteredCalls.map((call) => {
-        const { date, time } = formatDateTime(call.created_at);
-        const customerName = getCustomerName(call.dynamic_variables);
-        const location = getLocation(call.dynamic_variables);
-        const issue = getIssue(call.dynamic_variables);
-        const duration = formatDuration(call.duration_ms);
-        const sentiment = call.call_sentiment || 'Null';
-        const disconnectionReason = call.disconnection_reason || 'Null';
-        const transcript = (call.transcript || '').replace(/"/g, '""'); // Escape quotes in CSV
-
-        // Combine date and time
-        const fullDateTime = `${date} ${time}`;
-
-        return [
-          fullDateTime,
-          call.to_number || 'Null',
-          customerName,
-          location,
-          issue,
-          duration,
-          sentiment,
-          disconnectionReason,
-          transcript
-        ];
-      });
-
-      // Convert to CSV format
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => 
-          row.map(cell => {
-            // Escape commas, quotes, and newlines
-            const cellStr = String(cell || '');
-            if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
-              return `"${cellStr.replace(/"/g, '""')}"`;
-            }
-            return cellStr;
-          }).join(',')
-        )
-      ].join('\n');
-
-      // Create blob and download
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', `call-history-${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success(`Exported ${filteredCalls.length} call(s) successfully`);
-    } catch (error: any) {
-      console.error('Error exporting report:', error);
-      toast.error('Failed to export report. Please try again.');
-    }
-  };
-
   // Filter calls based on search and filters
   const filteredCalls = calls.filter((call) => {
     // Search filter
@@ -274,15 +191,6 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
           <p>View and manage all customer calls handled by your AI agent</p>
         </div>
         <div className="page-actions">
-          <button 
-            className="btn btn-secondary"
-            onClick={handleExportReport}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-            Export Report
-          </button>
           <button 
             className="btn btn-primary"
             onClick={() => toast('Test call feature coming soon')}

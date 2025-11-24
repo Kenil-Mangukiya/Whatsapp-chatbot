@@ -1,49 +1,166 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import { loginUser, authGoogleUser } from '../services/apis/authAPI';
+import { Phone, Lock } from 'lucide-react';
+import { loginUser, LoginUserData, sendOTP } from '../services/apis/authAPI';
 import toast from 'react-hot-toast';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const googleButtonRef = useRef<HTMLDivElement>(null);
-  const isGoogleScriptLoaded = useRef(false);
   
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  
-  const [showPassword, setShowPassword] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otp, setOtp] = useState('');
+  const [sentOtp, setSentOtp] = useState<string | null>(null);
+  const [isPhoneValidated, setIsPhoneValidated] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  // Format phone number - add 91 if not present
+  const formatPhoneNumber = (phone: string): string => {
+    // Remove all non-digit characters
+    const cleanedPhone = phone.replace(/\D/g, '');
+    
+    // If phone number doesn't start with 91, add it
+    if (!cleanedPhone.startsWith('91')) {
+      return '91' + cleanedPhone;
+    }
+    
+    return cleanedPhone;
+  };
+
+  // Validate phone number
+  const validatePhoneNumber = (phone: string): boolean => {
+    // Remove all non-digit characters
+    const cleanedPhone = phone.replace(/\D/g, '');
+    
+    // Check if phone number is valid (10-15 digits, can start with country code)
+    // Common formats: +1234567890, 1234567890, etc.
+    if (cleanedPhone.length < 10 || cleanedPhone.length > 15) {
+      return false;
+    }
+    
+    return true;
+  };
+
+  // Handle phone number input change
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPhoneNumber(value);
     // Clear error when user starts typing
-    if (errors[name]) {
+    if (errors.phoneNumber) {
       setErrors(prev => ({
         ...prev,
-        [name]: ''
+        phoneNumber: ''
       }));
     }
   };
 
+  // Handle OTP input change (only digits, max 6)
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setOtp(value);
+    // Clear error when user starts typing
+    if (errors.otp) {
+      setErrors(prev => ({
+        ...prev,
+        otp: ''
+      }));
+    }
+  };
+
+  // Extract OTP from WhatsApp response
+  const extractOTPFromResponse = (response: any): string | null => {
+    try {
+      // OTP is in: newMessage.message.components[0].text
+      // Format: "*647113* is your verification code."
+      const text = response?.data?.newMessage?.message?.components?.[0]?.text;
+      if (!text) {
+        return null;
+      }
+      
+      // Extract OTP between asterisks: *647113*
+      const otpMatch = text.match(/\*(\d+)\*/);
+      if (otpMatch && otpMatch[1]) {
+        return otpMatch[1];
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error extracting OTP:', error);
+      return null;
+    }
+  };
+
+  // Handle confirm button click - validate phone number and send OTP
+  const handleConfirmPhone = async () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Phone number is required';
+      setErrors(newErrors);
+      return;
+    }
+
+    if (!validatePhoneNumber(phoneNumber)) {
+      newErrors.phoneNumber = 'Please enter a valid phone number (10-15 digits)';
+      setErrors(newErrors);
+      return;
+    }
+
+    // Format phone number - add 91 if not present
+    const formattedPhoneNumber = formatPhoneNumber(phoneNumber);
+
+    // Phone number is valid, send OTP
+    setErrors({});
+    setSendingOtp(true);
+    
+    try {
+      const response = await sendOTP(formattedPhoneNumber);
+      const extractedOtp = extractOTPFromResponse(response);
+      
+      if (extractedOtp) {
+        setSentOtp(extractedOtp);
+        setIsPhoneValidated(true);
+        toast.success('OTP sent successfully! Please check your WhatsApp.');
+      } else {
+        toast.error('Failed to extract OTP from response. Please try again.');
+        console.error('Could not extract OTP from response:', response);
+      }
+    } catch (error: any) {
+      console.error('Error sending OTP:', error);
+      const errorMessage = error?.response?.data?.message 
+        || error?.data?.message 
+        || error?.message 
+        || 'Failed to send OTP. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  // Handle OTP submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
 
     // Validation
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+    if (!otp || otp.length !== 6) {
+      newErrors.otp = 'Please enter a valid 6-digit OTP';
+      setErrors(newErrors);
+      return;
     }
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
+
+    // Validate OTP against sent OTP
+    if (!sentOtp) {
+      newErrors.otp = 'OTP not found. Please request a new OTP.';
+      setErrors(newErrors);
+      return;
+    }
+
+    if (otp !== sentOtp) {
+      newErrors.otp = 'Invalid OTP. Please check and try again.';
+      setErrors(newErrors);
+      return;
     }
 
     setErrors(newErrors);
@@ -51,11 +168,14 @@ const LoginPage = () => {
     if (Object.keys(newErrors).length === 0) {
       setLoading(true);
       try {
-        const response = await loginUser({
-          email: formData.email,
-          password: formData.password,
-          rememberMe: rememberMe
-        });
+        // Format phone number - add 91 if not present
+        const formattedPhoneNumber = formatPhoneNumber(phoneNumber);
+        
+        const loginData: LoginUserData = {
+          phoneNumber: formattedPhoneNumber,
+          otp: otp
+        };
+        const response = await loginUser(loginData);
         
         console.log('Login successful:', response);
         toast.success(response.message || 'Login successful!');
@@ -76,114 +196,6 @@ const LoginPage = () => {
     }
   };
 
-  // Google callback handler - must be stable reference
-  const handleGoogleCallback = React.useCallback(async (response: any) => {
-    setLoading(true);
-    try {
-      // Decode the JWT token to get user info
-      const payload = JSON.parse(atob(response.credential.split('.')[1]));
-      
-      // Extract user information from Google
-      const googleEmail = payload.email;
-      const googleName = payload.name;
-      const googlePicture = payload.picture;
-
-      // Generate username from Google name (only letters and underscores)
-      const generatedUsername = googleName
-        .toLowerCase()
-        .replace(/[^a-z_]/g, '_')
-        .replace(/_+/g, '_')
-        .replace(/^_|_$/g, '')
-        .substring(0, 30);
-
-      // Authenticate user with Google - handles both registration and login
-      const authResponse = await authGoogleUser({
-        username: generatedUsername,
-        email: googleEmail,
-        avatar: googlePicture,
-      });
-
-      console.log('Google authentication successful:', authResponse);
-      
-      // Show appropriate message and navigate to dashboard
-      if (authResponse.isNewUser) {
-        toast.success('User registered successfully');
-      } else {
-        toast.success('User logged in successfully');
-      }
-      
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1500);
-    } catch (error: any) {
-      console.error('Google authentication error:', error);
-      toast.error(error.message || 'Google authentication failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [navigate]);
-
-  // Handle Google login button click
-  const handleGoogleLogin = () => {
-    if (googleButtonRef.current) {
-      // Find and click the hidden Google button
-      const googleButton = googleButtonRef.current.querySelector('div[role="button"]') as HTMLElement;
-      if (googleButton) {
-        googleButton.click();
-      }
-    }
-  };
-
-  // Load Google script and initialize hidden button
-  useEffect(() => {
-    const loadGoogleScript = () => {
-      if (isGoogleScriptLoaded.current || !googleButtonRef.current) return;
-      
-      if (!window.google) {
-        const script = document.createElement('script');
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-          if (window.google?.accounts?.id && import.meta.env.VITE_GOOGLE_CLIENT_ID && googleButtonRef.current) {
-            window.google.accounts.id.initialize({
-              client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-              callback: handleGoogleCallback,
-            });
-
-            // Render hidden Google button
-            window.google.accounts.id.renderButton(googleButtonRef.current, {
-              theme: "outline",
-              size: "large",
-              text: "continue_with",
-              width: 400,
-            });
-          }
-        };
-        script.onerror = () => {
-          console.error('Failed to load Google Sign-In script');
-        };
-        document.body.appendChild(script);
-        isGoogleScriptLoaded.current = true;
-      } else if (window.google?.accounts?.id && import.meta.env.VITE_GOOGLE_CLIENT_ID && googleButtonRef.current) {
-        // Script already loaded, just initialize and render
-        window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          callback: handleGoogleCallback,
-        });
-
-        // Render hidden Google button
-        window.google.accounts.id.renderButton(googleButtonRef.current, {
-          theme: "outline",
-          size: "large",
-          text: "continue_with",
-          width: 400,
-        });
-      }
-    };
-
-    loadGoogleScript();
-  }, [handleGoogleCallback]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -206,129 +218,86 @@ const LoginPage = () => {
         {/* Form */}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-5">
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-lg font-medium text-gray-700 mb-2">
-                Email Address <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail size={20} className="text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className={`pl-2 appearance-none relative block w-full py-3 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-colors ${
-                    errors.email ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-              )}
-            </div>
-
-            {/* Password */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="block text-lg font-medium text-gray-700">
-                  Password <span className="text-red-500">*</span>
+            {/* Phone Number */}
+            {!isPhoneValidated ? (
+              <div>
+                <label htmlFor="phoneNumber" className="block text-lg font-medium text-gray-700 mb-2">
+                  Phone Number <span className="text-red-500">*</span>
                 </label>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock size={20} className="text-gray-400" />
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Phone size={20} className="text-gray-400" />
+                  </div>
+                  <input
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={handlePhoneChange}
+                    className={`pl-3 appearance-none relative block w-full py-3 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-colors ${
+                      errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter your phone number"
+                    required
+                  />
                 </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className={`pl-2 pr-12 appearance-none relative block w-full py-3 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-colors ${
-                    errors.password ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter your password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-gray-700"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
+                {errors.phoneNumber && (
+                  <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>
+                )}
+                
+                {/* Confirm Button */}
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={handleConfirmPhone}
+                    disabled={loading || sendingOtp}
+                    className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {sendingOtp ? 'Sending OTP...' : 'Confirm'}
+                  </button>
+                </div>
               </div>
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-              )}
-            </div>
+            ) : (
+              /* OTP Input */
+              <div>
+                <label htmlFor="otp" className="block text-lg font-medium text-gray-700 mb-2">
+                  Enter 6-Digit OTP <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock size={20} className="text-gray-400" />
+                  </div>
+                  <input
+                    id="otp"
+                    name="otp"
+                    type="text"
+                    value={otp}
+                    onChange={handleOtpChange}
+                    maxLength={6}
+                    className={`pl-3 appearance-none relative block w-full py-3 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-colors text-center text-2xl tracking-widest ${
+                      errors.otp ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="000000"
+                    required
+                  />
+                </div>
+                {errors.otp && (
+                  <p className="mt-1 text-sm text-red-600">{errors.otp}</p>
+                )}
+                
+                {/* Submit Button */}
+                <div className="mt-4">
+                  <button
+                    type="submit"
+                    disabled={loading || otp.length !== 6}
+                    className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Verifying...' : 'Submit'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Remember Me */}
-          <div>
-            <div className="flex items-center">
-              <input
-                id="rememberMe"
-                name="rememberMe"
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
-              />
-              <label htmlFor="rememberMe" className="ml-2 block text-md text-gray-700 cursor-pointer">
-                Remember me
-              </label>
-            </div>
-            <p className="mt-1 ml-6 text-xs text-gray-500">
-              Keep me logged in for {rememberMe ? '30' : '7'} days
-            </p>
-          </div>
-
-          {/* Submit Button */}
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Signing In...' : 'Sign In'}
-            </button>
-          </div>
-
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
-            </div>
-          </div>
-
-          {/* Google Login */}
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-lg text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-colors shadow-sm hover:shadow-md"
-          >
-            {/* Google Icon */}
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            {/* Text: Continue with Google */}
-            <span>Continue with Google</span>
-          </button>
-          {/* Hidden Google button for programmatic trigger */}
-          <div ref={googleButtonRef} className="hidden"></div>
 
           {/* Register Link */}
           <div className="text-center">

@@ -8,7 +8,9 @@ const config = {
     cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
     cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
     googleClientId: process.env.GOOGLE_CLIENT_ID,
-    jwtSecret: process.env.JWT_SECRET
+    jwtSecret: process.env.JWT_SECRET,
+    upmatrixUri: process.env.UPMATRIX_URI,
+    upmatrixToken: process.env.UPMATRIX_TOKEN
 }
 
 export default config;

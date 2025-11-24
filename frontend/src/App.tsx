@@ -14,6 +14,7 @@ import InvoicingPage from './pages/InvoicingPage';
 import SettingsPage from './pages/SettingsPage';
 import TeamPage from './pages/TeamPage';
 import SupportPage from './pages/SupportPage';
+import DashboardNewPage from './pages/DashboardNewPage';
 
 function App() {
   // For now, we'll use a simple approach without authentication context
@@ -55,6 +56,7 @@ function App() {
         <Route path="/" element={<Dashboard />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage isActive={true} />} />
+          <Route path="dashboard-new" element={<DashboardNewPage isActive={true} />} />
           <Route path="agents" element={<AgentsPage isActive={true} />} />
           <Route path="voice-lab" element={<VoiceLabPage isActive={true} />} />
           <Route path="calls" element={<CallsPage isActive={true} />} />

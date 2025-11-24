@@ -100,4 +100,27 @@ const sendWelcomeMessageTemplate = async (phoneNumber) => {
     }
 }
 
-export { sendWelcomeMessageTemplate, data, config };
+const sendWhatsappOTP = async (phoneNumber) => {
+    console.log("Phone number is : ", phoneNumber);
+    if(!phoneNumber)
+    {
+        throw new apiError(400, "Phone number is required", []);
+    }
+    try
+    {
+        const callData = await data(phoneNumber, "otp_template")
+        console.log("Call data is : ", callData);
+        const callConfig = await config("POST", "/send-template-message", callData)
+        console.log("Call config is : ", callConfig);
+        const response = await axios(callConfig)
+        console.log("Response is : ", response);
+        return response;
+    }
+    catch(error)
+    {
+        console.log("Error while sending whatsapp OTP : ", error);
+        throw new apiError(500, "Something went wrong", error.message);
+    }
+}
+
+export { sendWelcomeMessageTemplate, sendWhatsappOTP };

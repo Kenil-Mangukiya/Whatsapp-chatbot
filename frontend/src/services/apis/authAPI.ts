@@ -20,9 +20,11 @@ export interface RegisterGoogleUserData {
 }
 
 export interface LoginUserData {
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
   rememberMe?: boolean;
+  phoneNumber?: string;
+  otp?: string;
 }
 
 export interface AuthResponse {
@@ -81,9 +83,20 @@ export const loginUser = async (data: LoginUserData) => {
   }
 };
 
+export const sendOTP = async (phoneNumber: string) => {
+  try {
+    const response: any = await api.post('/user/send-otp', { phoneNumber });
+    console.log("Send OTP response:", response);
+    return response;
+  } catch (error) {
+    throw getErrorDetails(error);
+  }
+};
+
 export default {
   registerUser,
   authGoogleUser,
   loginUser,
+  sendOTP,
 };
 
