@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import healthRoutes from "./public/src/routes/health.routes.js";
 import webhookRoutes from "./public/src/routes/webhook.routes.js";
 import retellWebhookRoutes from "./public/src/routes/retell.route.js";
+import userRoutes from "./public/src/routes/user.route.js";
 
 const app = express();
 
@@ -19,7 +20,7 @@ app.use(cookieParser());
 // Routes
 app.use('/', healthRoutes);
 app.use('/api', webhookRoutes, retellWebhookRoutes);
-
+app.use('/api/user', userRoutes);
 // Basic route
 app.get('/', (req, res) => {
     res.json({
