@@ -2,7 +2,8 @@ import asyncHandler from "../utils/asyncHandler.js";
 import apiResponse from "../utils/apiResponse.js";
 import apiError from "../utils/apiError.js";
 import { storeCallHistoryData } from "../services/retell.service.js";
-import { CallHistory } from "../db/index.js";
+import { CallHistory, sequelize } from "../db/index.js";
+import { Op } from "sequelize";
 
 export const retellWebhook = asyncHandler(async (req, res) => {
     console.log("retell webhook received : ", req.body);
@@ -48,7 +49,8 @@ export const getCallHistory = asyncHandler(async (req, res) => {
                 'recording_url',
                 'disconnection_reason',
                 'call_analysis',
-                'dynamic_variables'
+                'dynamic_variables',
+                'to_number'
             ]
         });
 
@@ -67,7 +69,8 @@ export const getCallHistory = asyncHandler(async (req, res) => {
                 call_summary: callAnalysis.call_summary || null,
                 call_sentiment: callAnalysis.user_sentiment || null, // user_sentiment from call_analysis
                 call_successful: callAnalysis.call_successful !== undefined ? callAnalysis.call_successful : null,
-                dynamic_variables: dynamicVars
+                dynamic_variables: dynamicVars,
+                to_number: record.to_number || null
             };
         });
 
@@ -77,5 +80,83 @@ export const getCallHistory = asyncHandler(async (req, res) => {
     } catch (error) {
         console.error("Error fetching call history:", error);
         throw new apiError(500, "Error fetching call history", error.message);
+    }
+});
+
+
+/**
+ * Get dashboard statistics
+ * Returns total calls, calls today, total duration, and sentiment counts
+ */
+export const getDashboardStats = asyncHandler(async (req, res) => {
+    try {
+        // Get total calls count
+        const totalCalls = await CallHistory.count();
+
+        // Get calls today count
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const callsToday = await CallHistory.count({
+            where: {
+                created_at: {
+                    [Op.gte]: today
+                }
+            }
+        });
+
+        // Get total duration (sum of all duration_ms)
+        const totalDurationResult = await CallHistory.findAll({
+            attributes: [
+                [sequelize.fn('SUM', sequelize.col('duration_ms')), 'total_duration']
+            ],
+            raw: true
+        });
+        const totalDurationMs = totalDurationResult[0]?.total_duration || 0;
+
+        // Get sentiment counts
+        const allCalls = await CallHistory.findAll({
+            attributes: ['call_analysis'],
+            where: {
+                call_analysis: {
+                    [Op.ne]: null
+                }
+            }
+        });
+
+        const sentimentCounts = {
+            Positive: 0,
+            Negative: 0,
+            Unknown: 0,
+            Neutral: 0
+        };
+
+        allCalls.forEach(call => {
+            if (call.call_analysis && typeof call.call_analysis === 'object') {
+                const sentiment = call.call_analysis.user_sentiment;
+                
+                if (sentiment && typeof sentiment === 'string') {
+                    const sentimentKey = sentiment.trim();
+                    if (sentimentCounts.hasOwnProperty(sentimentKey)) {
+                        sentimentCounts[sentimentKey]++;
+                    } else {
+                        sentimentCounts.Unknown++;
+                    }
+                } else {
+                    sentimentCounts.Unknown++;
+                }
+            }
+        });
+
+        return res.status(200).json(
+            new apiResponse(200, "Dashboard stats retrieved successfully", {
+                totalCalls,
+                callsToday,
+                totalDurationMs,
+                sentimentCounts
+            })
+        );
+    } catch (error) {
+        console.error("Error getting dashboard stats:", error);
+        throw new apiError(500, "Error retrieving dashboard stats", error.message);
     }
 });

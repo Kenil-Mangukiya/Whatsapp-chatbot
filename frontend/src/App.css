@@ -373,6 +373,82 @@ body {
     color: var(--text-secondary);
 }
 
+/* Sentiment Grid */
+.sentiment-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.sentiment-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s;
+}
+
+.sentiment-card:hover {
+    border-color: var(--primary-light);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.sentiment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.sentiment-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.sentiment-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.sentiment-badge.sentiment-positive {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10B981;
+}
+
+.sentiment-badge.sentiment-negative {
+    background: rgba(239, 68, 68, 0.1);
+    color: #EF4444;
+}
+
+.sentiment-badge.sentiment-neutral {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3B82F6;
+}
+
+.sentiment-badge.sentiment-unknown {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6B7280;
+}
+
+.sentiment-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.sentiment-percentage {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
 /* Section Header */
 .section-header {
     display: flex;
@@ -1836,6 +1912,22 @@ input:checked + .toggle-slider:before {
     white-space: pre-wrap;
     word-wrap: break-word;
     color: var(--text-primary);
+}
+
+.call-summary-content {
+    background: var(--bg-secondary);
+    padding: 1.25rem;
+    border-radius: 0.5rem;
+    border-left: 3px solid var(--primary-color);
+}
+
+.call-summary-content p {
+    margin: 0;
+    font-size: 0.938rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .icon-action.playing {

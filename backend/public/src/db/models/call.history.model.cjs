@@ -95,6 +95,16 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       comment: 'Call analysis data including summary, sentiment, and success status'
     },
+    from_number: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      comment: 'Phone number that initiated the call'
+    },
+    to_number: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      comment: 'Phone number that received the call'
+    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,

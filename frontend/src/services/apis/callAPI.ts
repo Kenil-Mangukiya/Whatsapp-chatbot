@@ -19,6 +19,7 @@ export interface CallHistoryItem {
   dynamic_variables: {
     [key: string]: any;
   } | null;
+  to_number: string | null;
 }
 
 export interface CallHistoryResponse {
@@ -26,6 +27,25 @@ export interface CallHistoryResponse {
   statusCode: number;
   message: string;
   data: CallHistoryItem[];
+}
+
+export interface DashboardStats {
+  totalCalls: number;
+  callsToday: number;
+  totalDurationMs: number;
+  sentimentCounts: {
+    Positive: number;
+    Negative: number;
+    Neutral: number;
+    Unknown: number;
+  };
+}
+
+export interface DashboardStatsResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: DashboardStats;
 }
 
 export const getCallHistory = async (): Promise<CallHistoryResponse> => {
@@ -37,7 +57,17 @@ export const getCallHistory = async (): Promise<CallHistoryResponse> => {
   }
 };
 
+export const getDashboardStats = async (): Promise<DashboardStatsResponse> => {
+  try {
+    const response: any = await api.get('/retell/dashboard-stats');
+    return response;
+  } catch (error) {
+    throw getErrorDetails(error);
+  }
+};
+
 export default {
   getCallHistory,
+  getDashboardStats,
 };
 
