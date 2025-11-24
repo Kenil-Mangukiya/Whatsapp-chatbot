@@ -1,6 +1,11 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
-const Sidebar = ({ activePage, setActivePage }) => {
+const Sidebar = ({ activePage }) => {
+  const location = useLocation();
+  
+  // Get active page from pathname if not provided
+  const currentActivePage = activePage || location.pathname.split('/').pop() || 'dashboard';
   const menuItems = [
     {
       id: 'dashboard',
@@ -115,22 +120,18 @@ const Sidebar = ({ activePage, setActivePage }) => {
     }
   ];
 
-  const handleMenuClick = (pageId) => {
-    setActivePage(pageId);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   return (
     <aside className="sidebar">
       <ul className="sidebar-menu">
         {menuItems.map((item) => (
-          <li
-            key={item.id}
-            className={`menu-item ${activePage === item.id ? 'active' : ''}`}
-            onClick={() => handleMenuClick(item.id)}
-          >
-            {item.icon}
-            <span>{item.label}</span>
+          <li key={item.id}>
+            <Link
+              to={`/${item.id}`}
+              className={`menu-item ${currentActivePage === item.id ? 'active' : ''}`}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </Link>
           </li>
         ))}
       </ul>

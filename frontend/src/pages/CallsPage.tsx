@@ -8,14 +8,12 @@ interface CallsPageProps {
 
 const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All Calls');
+  const [issueFilter, setIssueFilter] = useState('All Issue');
   const [timeFilter, setTimeFilter] = useState('All Time');
   const [calls, setCalls] = useState<CallHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCall, setSelectedCall] = useState<CallHistoryItem | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [playingUrl, setPlayingUrl] = useState<string | null>(null);
 
   // Fetch call history on component mount
   useEffect(() => {
@@ -77,40 +75,32 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
     return dynamicVars.issue || dynamicVars.problem || 'Null';
   };
 
-  // Handle play button click
-  const handlePlayRecording = (recordingUrl: string | null) => {
-    if (!recordingUrl) {
-      toast.error('No recording available');
-      return;
-    }
-
-    // Stop current audio if playing
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-
-    // Create new audio element
-    const audio = new Audio(recordingUrl);
-    audioRef.current = audio;
-    setPlayingUrl(recordingUrl);
-
-    audio.play().catch((error) => {
-      console.error('Error playing audio:', error);
-      toast.error('Failed to play recording');
-      setPlayingUrl(null);
+  // Parse transcript into chat messages (Agent and User)
+  const parseTranscript = (transcript: string | null): Array<{ role: 'agent' | 'user'; content: string }> => {
+    if (!transcript) return [];
+    
+    const messages: Array<{ role: 'agent' | 'user'; content: string }> = [];
+    const lines = transcript.split('\n').filter(line => line.trim());
+    
+    lines.forEach(line => {
+      const trimmedLine = line.trim();
+      if (trimmedLine.startsWith('Agent:')) {
+        messages.push({
+          role: 'agent',
+          content: trimmedLine.replace(/^Agent:\s*/, '')
+        });
+      } else if (trimmedLine.startsWith('User:')) {
+        messages.push({
+          role: 'user',
+          content: trimmedLine.replace(/^User:\s*/, '')
+        });
+      } else if (messages.length > 0) {
+        // Continue previous message if line doesn't start with Agent: or User:
+        messages[messages.length - 1].content += ' ' + trimmedLine;
+      }
     });
-
-    audio.onended = () => {
-      setPlayingUrl(null);
-      audioRef.current = null;
-    };
-
-    audio.onerror = () => {
-      toast.error('Error loading audio');
-      setPlayingUrl(null);
-      audioRef.current = null;
-    };
+    
+    return messages;
   };
 
   // Handle view details button click
@@ -143,12 +133,26 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
       }
     }
 
-    // Status filter
-    if (statusFilter !== 'All Calls') {
-      const status = call.call_status || '';
-      if (statusFilter === 'Completed' && status !== 'ended') return false;
-      if (statusFilter === 'Transferred' && status !== 'transferred') return false;
-      if (statusFilter === 'Missed' && status !== 'missed') return false;
+    // Issue filter
+    if (issueFilter !== 'All Issue') {
+      const issue = getIssue(call.dynamic_variables).toLowerCase();
+      const filterLower = issueFilter.toLowerCase();
+      
+      // Map filter options to possible issue values
+      const issueMappings: { [key: string]: string[] } = {
+        'tyre punctured': ['tyre puncture', 'tyre punctured', 'puncture', 'टायर पंक्चर'],
+        'battery issue': ['battery', 'battery dead', 'battery issue', 'dead battery'],
+        'towing': ['towing', 'tow'],
+        'lockout': ['lockout', 'lock out', 'locked out'],
+        'empty fuel': ['empty fuel', 'fuel खत्म', 'fuel empty', 'out of fuel'],
+        'accident': ['accident', 'crash', 'collision'],
+        'engine not starting': ['engine not starting', 'start problem', 'start issue', 'not starting']
+      };
+      
+      const possibleValues = issueMappings[filterLower] || [filterLower];
+      const matches = possibleValues.some(value => issue.includes(value.toLowerCase()));
+      
+      if (!matches) return false;
     }
 
     // Time filter
@@ -168,8 +172,8 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
 
   const handleFilterChange = (filterType: string, value: string) => {
     switch (filterType) {
-      case 'status':
-        setStatusFilter(value);
+      case 'issue':
+        setIssueFilter(value);
         break;
       case 'time':
         setTimeFilter(value);
@@ -223,13 +227,17 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
         </div>
         <select 
           className="filter-select"
-          value={statusFilter}
-          onChange={(e) => handleFilterChange('status', e.target.value)}
+          value={issueFilter}
+          onChange={(e) => handleFilterChange('issue', e.target.value)}
         >
-          <option>All Calls</option>
-          <option>Completed</option>
-          <option>Transferred</option>
-          <option>Missed</option>
+          <option>All Issue</option>
+          <option>Tyre punctured</option>
+          <option>Battery issue</option>
+          <option>Towing</option>
+          <option>Lockout</option>
+          <option>Empty fuel</option>
+          <option>Accident</option>
+          <option>Engine not starting</option>
         </select>
         <select 
           className="filter-select"
@@ -265,7 +273,7 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
                 <th>Location</th>
                 <th>Issue</th>
                 <th>Duration</th>
-                <th>Status</th>
+                <th>Sentiment</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -276,7 +284,6 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
                 const location = getLocation(call.dynamic_variables);
                 const issue = getIssue(call.dynamic_variables);
                 const duration = formatDuration(call.duration_ms);
-                const isPlaying = playingUrl === call.recording_url;
 
                 return (
                   <tr key={index}>
@@ -287,12 +294,7 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
                       </div>
                     </td>
                     <td>
-                      <div className="customer-cell">
-                        <div className="customer-avatar">
-                          {customerName !== 'Null' ? customerName.charAt(0).toUpperCase() : '?'}
-                        </div>
-                        <div className="customer-name">{customerName}</div>
-                      </div>
+                      <div className="customer-name">{customerName}</div>
                     </td>
                     <td>{location}</td>
                     <td>
@@ -300,43 +302,17 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
                     </td>
                     <td>{duration}</td>
                     <td>
-                      <span className={`status-badge status-${(call.call_status || 'unknown').toLowerCase()}`}>
-                        {call.call_status || 'Null'}
+                      <span className={`sentiment-badge sentiment-${(call.call_sentiment || 'Unknown').toLowerCase()}`}>
+                        {call.call_sentiment || 'Null'}
                       </span>
                     </td>
                     <td>
-                      <div className="action-buttons">
-                        <button 
-                          className={`icon-action ${isPlaying ? 'playing' : ''}`}
-                          title="Play recording"
-                          onClick={() => handlePlayRecording(call.recording_url)}
-                          disabled={!call.recording_url}
-                        >
-                          {isPlaying ? (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                              <rect x="6" y="4" width="4" height="16"/>
-                              <rect x="14" y="4" width="4" height="16"/>
-                            </svg>
-                          ) : (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                              <polygon points="5 3 19 12 5 21 5 3"/>
-                            </svg>
-                          )}
-                        </button>
-                        <button 
-                          className="icon-action"
-                          title="View details"
-                          onClick={() => handleViewDetails(call)}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                            <polyline points="10 9 9 9 8 9"/>
-                          </svg>
-                        </button>
-                      </div>
+                      <button 
+                        className="btn-view-details"
+                        onClick={() => handleViewDetails(call)}
+                      >
+                        View Details
+                      </button>
                     </td>
                   </tr>
                 );
@@ -361,21 +337,16 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
             </div>
             <div className="modal-body">
               <div className="detail-section">
-                <h3>Call Information</h3>
+                <h3>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }}>
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                  </svg>
+                  Call Information
+                </h3>
                 <div className="detail-grid">
-                  <div className="detail-item">
-                    <span className="detail-label">Status:</span>
-                    <span className="detail-value">{selectedCall.call_status || 'Null'}</span>
-                  </div>
                   <div className="detail-item">
                     <span className="detail-label">Duration:</span>
                     <span className="detail-value">{formatDuration(selectedCall.duration_ms)}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Created At:</span>
-                    <span className="detail-value">
-                      {selectedCall.created_at ? new Date(selectedCall.created_at).toLocaleString() : 'Null'}
-                    </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Disconnection Reason:</span>
@@ -384,31 +355,15 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
                 </div>
               </div>
 
-              <div className="detail-section">
-                <h3>Call Analysis</h3>
-                <div className="detail-grid">
-                  <div className="detail-item">
-                    <span className="detail-label">Sentiment:</span>
-                    <span className="detail-value">{selectedCall.call_sentiment || 'Null'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Call Successful:</span>
-                    <span className="detail-value">
-                      {selectedCall.call_successful !== null ? (selectedCall.call_successful ? 'Yes' : 'No') : 'Null'}
-                    </span>
-                  </div>
-                </div>
-                {selectedCall.call_summary && (
-                  <div className="detail-item full-width">
-                    <span className="detail-label">Summary:</span>
-                    <p className="detail-value">{selectedCall.call_summary}</p>
-                  </div>
-                )}
-              </div>
-
               {selectedCall.dynamic_variables && Object.keys(selectedCall.dynamic_variables).length > 0 && (
                 <div className="detail-section">
-                  <h3>Dynamic Variables</h3>
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }}>
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    User Information
+                  </h3>
                   <div className="detail-grid">
                     {Object.entries(selectedCall.dynamic_variables).map(([key, value]) => (
                       <div key={key} className="detail-item">
@@ -422,19 +377,60 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
 
               {selectedCall.transcript && (
                 <div className="detail-section">
-                  <h3>Transcript</h3>
-                  <div className="transcript-content">
-                    <pre>{selectedCall.transcript}</pre>
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }}>
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                      <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                    Transcript
+                  </h3>
+                  <div className="chat-transcript">
+                    {parseTranscript(selectedCall.transcript).map((message, index) => (
+                      <div key={index} className={`chat-message ${message.role === 'agent' ? 'agent-message' : 'user-message'}`}>
+                        <div className="message-bubble">
+                          <div className="message-role">{message.role === 'agent' ? 'Agent' : 'User'}</div>
+                          <div className="message-content">{message.content}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
               {selectedCall.recording_url && (
                 <div className="detail-section">
-                  <h3>Recording</h3>
-                  <audio controls src={selectedCall.recording_url} style={{ width: '100%' }}>
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }}>
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                    </svg>
+                    Recording
+                  </h3>
+                  <audio controls src={selectedCall.recording_url} style={{ width: '100%', marginBottom: '1rem' }}>
                     Your browser does not support the audio element.
                   </audio>
+                  <button 
+                    className="btn-download-recording"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = selectedCall.recording_url!;
+                      link.download = `recording-${selectedCall.created_at ? new Date(selectedCall.created_at).toISOString() : Date.now()}.wav`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      toast.success('Recording download started');
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download Recording
+                  </button>
                 </div>
               )}
             </div>

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Base API URL - adjust this to match your backend URL
 // Vite uses import.meta.env instead of process.env
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api';
 
 // Create axios instance with default configuration
 const api = axios.create({
