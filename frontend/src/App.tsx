@@ -4,6 +4,16 @@ import { Toaster } from 'react-hot-toast';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Dashboard from './components/Dashboard';
+import DashboardPage from './pages/DashboardPage';
+import AgentsPage from './pages/AgentsPage';
+import VoiceLabPage from './pages/VoiceLabPage';
+import CallsPage from './pages/CallsPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import CRMPage from './pages/CRMPage';
+import InvoicingPage from './pages/InvoicingPage';
+import SettingsPage from './pages/SettingsPage';
+import TeamPage from './pages/TeamPage';
+import SupportPage from './pages/SupportPage';
 
 function App() {
   // For now, we'll use a simple approach without authentication context
@@ -42,8 +52,20 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Dashboard />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage isActive={true} />} />
+          <Route path="agents" element={<AgentsPage isActive={true} />} />
+          <Route path="voice-lab" element={<VoiceLabPage isActive={true} />} />
+          <Route path="calls" element={<CallsPage isActive={true} />} />
+          <Route path="analytics" element={<AnalyticsPage isActive={true} />} />
+          <Route path="crm" element={<CRMPage isActive={true} />} />
+          <Route path="invoicing" element={<InvoicingPage isActive={true} />} />
+          <Route path="settings" element={<SettingsPage isActive={true} />} />
+          <Route path="team" element={<TeamPage isActive={true} />} />
+          <Route path="support" element={<SupportPage isActive={true} />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>
   );

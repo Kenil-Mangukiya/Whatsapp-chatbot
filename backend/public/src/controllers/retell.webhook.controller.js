@@ -47,13 +47,15 @@ export const getCallHistory = asyncHandler(async (req, res) => {
                 'transcript',
                 'recording_url',
                 'disconnection_reason',
-                'call_analysis'
+                'call_analysis',
+                'dynamic_variables'
             ]
         });
 
         // Map the data to return only required fields
         const formattedCallHistory = callHistoryRecords.map(record => {
             const callAnalysis = record.call_analysis || {};
+            const dynamicVars = record.dynamic_variables || {};
             
             return {
                 call_status: record.call_status || null,
@@ -64,7 +66,8 @@ export const getCallHistory = asyncHandler(async (req, res) => {
                 disconnection_reason: record.disconnection_reason || null,
                 call_summary: callAnalysis.call_summary || null,
                 call_sentiment: callAnalysis.user_sentiment || null, // user_sentiment from call_analysis
-                call_successful: callAnalysis.call_successful !== undefined ? callAnalysis.call_successful : null
+                call_successful: callAnalysis.call_successful !== undefined ? callAnalysis.call_successful : null,
+                dynamic_variables: dynamicVars
             };
         });
 
