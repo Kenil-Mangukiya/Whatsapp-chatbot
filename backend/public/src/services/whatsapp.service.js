@@ -76,7 +76,7 @@ const data = (contactNumber, templateName, options = {}) => {
     return JSON.stringify(dataObject);
 }
 
-const sendWelcomeMessageTemplate = asyncHandler(async (phoneNumber) => {
+const sendWelcomeMessageTemplate = async (phoneNumber) => {
     console.log("Phone number is : ", phoneNumber);
     if(!phoneNumber) 
     {
@@ -98,6 +98,6 @@ const sendWelcomeMessageTemplate = asyncHandler(async (phoneNumber) => {
         console.log("Error while sending welcome message template : ", error);
         throw new apiError(500, "Something went wrong", error.message);
     }
-})
+}
 
 export { sendWelcomeMessageTemplate, data, config };

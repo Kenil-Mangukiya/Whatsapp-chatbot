@@ -7,7 +7,7 @@ import { CallHistory } from "../db/index.js";
  * Process and filter call history data from Retell webhook
  * Maps webhook data to database fields with appropriate fallbacks
  */
-export const filterCallHistoryData = asyncHandler(async (webhookData) => {
+export const filterCallHistoryData = (webhookData) => {
     console.log("Call data is : ", webhookData);
     try {
         // Extract call object from webhook
@@ -44,6 +44,12 @@ export const filterCallHistoryData = asyncHandler(async (webhookData) => {
             }
         }
 
+        // Process call_analysis - store the whole object
+        let callAnalysis = null;
+        if (call.call_analysis && typeof call.call_analysis === 'object' && !Array.isArray(call.call_analysis)) {
+            callAnalysis = call.call_analysis;
+        }
+
         // Map webhook data to database fields
         const processedData = {
             call_id: getValue(call.call_id, ""),
@@ -59,6 +65,8 @@ export const filterCallHistoryData = asyncHandler(async (webhookData) => {
             cost: cost,
             recording_url: getValue(call.recording_url, ""),
             log_url: getValue(call.public_log_url, ""),
+            disconnection_reason: getValue(call.disconnection_reason, ""),
+            call_analysis: callAnalysis,
             created_at: new Date()
         };
 
@@ -68,7 +76,7 @@ export const filterCallHistoryData = asyncHandler(async (webhookData) => {
         console.error("Error filtering call history data:", error);
         throw new apiError(500, "Error processing call history data", error.message);
     }
-});
+};
 
 /**
  * Store call history data in database
@@ -77,7 +85,12 @@ export const storeCallHistoryData = asyncHandler(async (callData) => {
     console.log("Storing call history data:", callData);
     try {
         // First filter/process the data
-        const processedData = await filterCallHistoryData(callData);
+        const processedData = filterCallHistoryData(callData);
+        
+        // Validate that processedData exists and has call_id
+        if (!processedData || !processedData.call_id) {
+            throw new apiError(400, "Invalid call data: call_id is required");
+        }
         
         // Check if call already exists
         const existingCall = await CallHistory.findOne({

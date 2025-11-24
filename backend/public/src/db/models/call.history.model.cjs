@@ -85,6 +85,16 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       comment: 'URL to call logs'
     },
+    disconnection_reason: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      comment: 'Reason for call disconnection (user_hangup, agent_hangup, etc.)'
+    },
+    call_analysis: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      comment: 'Call analysis data including summary, sentiment, and success status'
+    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,
