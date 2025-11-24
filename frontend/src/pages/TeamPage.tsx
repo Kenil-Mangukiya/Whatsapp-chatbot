@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 
-const TeamPage = ({ isActive }) => {
+interface TeamPageProps {
+  isActive?: boolean;
+}
+
+const TeamPage: React.FC<TeamPageProps> = ({ isActive }) => {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [inviteForm, setInviteForm] = useState({
     email: '',
@@ -8,14 +12,14 @@ const TeamPage = ({ isActive }) => {
     message: ''
   });
 
-  const handleInviteSubmit = (e) => {
+  const handleInviteSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     alert('Team invitation sent! (In production, this would send an actual email)');
     setInviteModalOpen(false);
     setInviteForm({ email: '', role: 'agent', message: '' });
   };
 
-  const handleInviteFormChange = (field, value) => {
+  const handleInviteFormChange = (field: string, value: string) => {
     setInviteForm(prev => ({
       ...prev,
       [field]: value
@@ -208,7 +212,7 @@ const TeamPage = ({ isActive }) => {
                   value={inviteForm.message}
                   onChange={(e) => handleInviteFormChange('message', e.target.value)}
                   placeholder="Add a personal message to the invitation..."
-                  rows="3"
+                  rows={3}
                 />
               </div>
               <div className="modal-actions">

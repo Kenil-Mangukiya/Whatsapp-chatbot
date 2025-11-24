@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 
-const SettingsPage = ({ isActive }) => {
+interface SettingsPageProps {
+  isActive?: boolean;
+}
+
+const SettingsPage: React.FC<SettingsPageProps> = ({ isActive }) => {
   const [saveStatus, setSaveStatus] = useState('Save Settings');
   const [settings, setSettings] = useState({
     voiceGender: 'female',
@@ -30,7 +34,7 @@ const SettingsPage = ({ isActive }) => {
     }, 1000);
   };
 
-  const handleSettingChange = (key, value) => {
+  const handleSettingChange = (key: string, value: string | boolean | number) => {
     setSettings(prev => ({
       ...prev,
       [key]: value

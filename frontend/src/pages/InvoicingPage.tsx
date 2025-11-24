@@ -1,7 +1,11 @@
 import React from 'react';
 
-const InvoicingPage = ({ isActive }) => {
-  const handleActionClick = (action) => {
+interface InvoicingPageProps {
+  isActive?: boolean;
+}
+
+const InvoicingPage: React.FC<InvoicingPageProps> = ({ isActive }) => {
+  const handleActionClick = (action: string) => {
     console.log('Action clicked:', action);
     alert(`"${action}" feature will be fully functional in production!`);
   };

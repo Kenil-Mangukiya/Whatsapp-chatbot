@@ -2,6 +2,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import apiError from "../utils/apiError.js";
 import apiResponse from "../utils/apiResponse.js";
 import { CallHistory } from "../db/index.js";
+import { Op } from "sequelize";
 
 /**
  * Process and filter call history data from Retell webhook
@@ -115,4 +116,61 @@ export const storeCallHistoryData = asyncHandler(async (callData) => {
         console.log("Error while storing call history : ", error);
         throw new apiError(500, "Something went wrong", error.message);
     }
-})
+});
+
+/**
+ * Get sentiment counts from call history
+ * Returns the number of each sentiment type (Positive, Negative, Unknown, Neutral)
+ * @returns {Promise<Object>} Object with sentiment counts
+ */
+export const getSentimentCounts = asyncHandler(async () => {
+    try {
+        // Fetch all call history records with call_analysis
+        const allCalls = await CallHistory.findAll({
+            attributes: ['call_analysis'],
+            where: {
+                call_analysis: {
+                    [Op.ne]: null
+                }
+            }
+        });
+
+        // Initialize sentiment counts
+        const sentimentCounts = {
+            Positive: 0,
+            Negative: 0,
+            Unknown: 0,
+            Neutral: 0
+        };
+
+        // Process each call record
+        allCalls.forEach(call => {
+            if (call.call_analysis && typeof call.call_analysis === 'object') {
+                const sentiment = call.call_analysis.user_sentiment;
+                
+                // Check if sentiment exists and is a valid type
+                if (sentiment && typeof sentiment === 'string') {
+                    const sentimentKey = sentiment.trim();
+                    
+                    // Increment count if sentiment matches one of the valid types
+                    if (sentimentCounts.hasOwnProperty(sentimentKey)) {
+                        sentimentCounts[sentimentKey]++;
+                    } else {
+                        // If sentiment is not one of the expected types, count it as Unknown
+                        sentimentCounts.Unknown++;
+                    }
+                } else {
+                    // If user_sentiment is missing or invalid, count as Unknown
+                    sentimentCounts.Unknown++;
+                }
+            }
+        });
+
+        return sentimentCounts;
+    }
+    catch(error) {
+        console.error("Error getting sentiment counts:", error);
+        throw new apiError(500, "Error retrieving sentiment counts", error.message);
+    }
+});
+

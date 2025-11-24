@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 
-const SupportPage = ({ isActive }) => {
-  const [activeFaq, setActiveFaq] = useState(null);
+interface SupportPageProps {
+  isActive?: boolean;
+}
 
-  const handleActionClick = (action) => {
+const SupportPage: React.FC<SupportPageProps> = ({ isActive }) => {
+  const [activeFaq, setActiveFaq] = useState<number | null>(null);
+
+  const handleActionClick = (action: string) => {
     console.log('Action clicked:', action);
     alert(`"${action}" feature will be fully functional in production!`);
   };
 
-  const toggleFaq = (index) => {
+  const toggleFaq = (index: number) => {
     setActiveFaq(activeFaq === index ? null : index);
   };
 

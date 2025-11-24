@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
 
-const CallsPage = ({ isActive }) => {
+interface CallsPageProps {
+  isActive?: boolean;
+}
+
+const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Calls');
   const [timeFilter, setTimeFilter] = useState('All Time');
   const [languageFilter, setLanguageFilter] = useState('All Languages');
 
-  const handleActionClick = (action) => {
+  const handleActionClick = (action: string) => {
     console.log('Action clicked:', action);
     alert(`"${action}" feature will be fully functional in production!`);
   };
 
-  const handleSearchChange = (e) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
     console.log('Searching for:', e.target.value);
   };
 
-  const handleFilterChange = (filterType, value) => {
+  const handleFilterChange = (filterType: string, value: string) => {
     console.log('Filter changed:', value);
     switch (filterType) {
       case 'status':

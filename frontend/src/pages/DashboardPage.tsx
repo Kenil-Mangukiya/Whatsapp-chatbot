@@ -1,7 +1,11 @@
 import React from 'react';
 
-const DashboardPage = ({ isActive }) => {
-  const handleActionClick = (action) => {
+interface DashboardPageProps {
+  isActive?: boolean;
+}
+
+const DashboardPage: React.FC<DashboardPageProps> = ({ isActive }) => {
+  const handleActionClick = (action: string) => {
     console.log('Action clicked:', action);
     alert(`"${action}" feature will be fully functional in production!`);
   };

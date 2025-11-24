@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 
-const AnalyticsPage = ({ isActive }) => {
+interface AnalyticsPageProps {
+  isActive?: boolean;
+}
+
+const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ isActive }) => {
   const [timeRange, setTimeRange] = useState('Last 7 days');
 
-  const handleActionClick = (action) => {
+  const handleActionClick = (action: string) => {
     console.log('Action clicked:', action);
     alert(`"${action}" feature will be fully functional in production!`);
   };
 
-  const handleTimeRangeChange = (e) => {
+  const handleTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setTimeRange(e.target.value);
     console.log('Time range changed:', e.target.value);
   };
