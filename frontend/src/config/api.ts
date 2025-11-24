@@ -40,7 +40,7 @@ api.interceptors.response.use(
       
       // Get the request URL to check if it's an auth endpoint
       const requestUrl = error.config?.url || '';
-      const isAuthEndpoint = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register') || requestUrl.includes('/auth/google');
+      const isAuthEndpoint = requestUrl.includes('/user/login') || requestUrl.includes('/user/register') || requestUrl.includes('/auth/google');
 
       switch (status) {
         case 401:

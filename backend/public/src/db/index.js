@@ -29,18 +29,21 @@ const sequelize = new Sequelize(
 
 // Load all models
 const UserModel = require("./models/user.cjs");
+const AuthUserModel = require("./models/auth.user.model.cjs");
 const CallHistoryModel = require("./models/call.history.model.cjs");
 const ConversationModel = ConversationModelDefault;
 
 // Initialize models
 // Note: Conversation model uses Sequelize (capital S) instead of DataTypes
 const User = UserModel(sequelize, DataTypes);
+const AuthUser = AuthUserModel(sequelize, DataTypes);
 const Conversation = ConversationModel(sequelize, Sequelize);
 const CallHistory = CallHistoryModel(sequelize, DataTypes);
 
 // Define associations
 const models = {
     User,
+    AuthUser,
     Conversation,
     CallHistory
 };
@@ -53,10 +56,11 @@ Object.keys(models).forEach(modelName => {
 });
 
 // Export sequelize instance and models
-export { sequelize, models, User, Conversation, CallHistory };
+export { sequelize, models, User, AuthUser, Conversation, CallHistory };
 export default {
     sequelize,
     User,
+    AuthUser,
     Conversation,
     CallHistory
 };

@@ -64,7 +64,11 @@ const LoginPage = () => {
         }, 1500);
       } catch (error: any) {
         console.error('Login error:', error);
-        const errorMessage = error.message || 'Login failed. Please try again.';
+        // Extract error message from various possible structures
+        const errorMessage = error?.response?.data?.message 
+          || error?.data?.message 
+          || error?.message 
+          || 'Login failed. Please try again.';
         toast.error(errorMessage);
       } finally {
         setLoading(false);

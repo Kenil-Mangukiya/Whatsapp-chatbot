@@ -48,7 +48,7 @@ export const registerUser = async (data: RegisterUserData) => {
       formData.append('avatar', data.avatar);
     }
 
-    const response: any = await api.post('/auth/register', formData, {
+    const response: any = await api.post('/user/register', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -73,7 +73,7 @@ export const authGoogleUser = async (data: RegisterGoogleUserData) => {
 
 export const loginUser = async (data: LoginUserData) => {
   try {
-    const response: any = await api.post('/auth/login', data);
+    const response: any = await api.post('/user/login', data);
     console.log("Login response:", response);
     return response;
   } catch (error) {

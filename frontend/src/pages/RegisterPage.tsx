@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, Upload, X, Edit2, Camera } from 'lucide-react';
 import { registerUser, authGoogleUser } from '../services/apis/authAPI';
+import { getErrorDetails } from '../../utils/apiUtils';
 import toast from 'react-hot-toast';
 
 const RegisterPage = () => {
@@ -110,8 +111,9 @@ const RegisterPage = () => {
         }, 1500);
       } catch (error: any) {
         console.error('Registration error:', error);
-        const errorMessage = error.message || 'Registration failed. Please try again.';
-        toast.error(errorMessage);
+        // Use getErrorDetails for consistent error extraction
+        const errorDetails = getErrorDetails(error);
+        toast.error(errorDetails.message);
       } finally {
         setLoading(false);
       }

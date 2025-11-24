@@ -4,13 +4,14 @@ import cookieParser from "cookie-parser";
 import healthRoutes from "./public/src/routes/health.routes.js";
 import webhookRoutes from "./public/src/routes/webhook.routes.js";
 import retellWebhookRoutes from "./public/src/routes/retell.route.js";
-import userRoutes from "./public/src/routes/user.route.js";
+import { userRoutes } from "./public/src/routes/user.route.js";
+import config from "./public/src/config/config.js";
 
 const app = express();
 
 // Middleware
 app.use(cors({
-    origin: "*",
+    origin: config.corsOrigin,
     credentials: true,
 }));
 app.use(express.json());

@@ -24,19 +24,27 @@ export interface ApiResponse<T = any> {
     if (typeof error === 'string') {
       return error;
     }
-  
+
+    // Check for axios error response structure
     if (error?.response?.data?.message) {
       return error.response.data.message;
     }
-  
+
+    // Check for direct error object with message
     if (error?.message) {
       return error.message;
     }
-  
+
+    // Check for errors array
     if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {
       return error.errors[0];
     }
-  
+
+    // Check for response data directly (if error was already processed)
+    if (error?.data?.message) {
+      return error.data.message;
+    }
+
     return 'An unexpected error occurred';
   };
   

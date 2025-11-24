@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import uploadOnCloudinary  from "../utils/cloudinary.js";
 import config from "../config/config.js";
+import { AuthUser } from "../db/index.js";
 
 // Generate JWT token with user data
 const generateToken = (userId, email, avatar, rememberMe = false) => {
@@ -30,31 +31,55 @@ export const registerUser = asyncHandler(async (req, res) => {
     // Validation (password optional for OAuth users)
     if (!username || !email) {
         console.log("Validation failed - missing fields");
-        return res.status(400).json(new apiError(400, "Username and email are required", [], ""));
+        const error = new apiError(400, "Username and email are required", [], "");
+        return res.status(error.statusCode).json({
+            success: error.success,
+            statusCode: error.statusCode,
+            message: error.message,
+            errors: error.errors
+        });
     }
 
     // Username validation - only letters and underscores
     if (!/^[a-zA-Z_]+$/.test(username)) {
-        return res.status(400).json(new apiError(400, "Username must contain only letters and underscores", [], ""));
+        const error = new apiError(400, "Username must contain only letters and underscores", [], "");
+        return res.status(error.statusCode).json({
+            success: error.success,
+            statusCode: error.statusCode,
+            message: error.message,
+            errors: error.errors
+        });
     }
 
     // Password validation - must be above 5 characters (only for local registration)
     if (password && password.length <= 5) {
-        return res.status(400).json(new apiError(400, "Password must be above 5 characters", [], ""));
+        const error = new apiError(400, "Password must be above 5 characters", [], "");
+        return res.status(error.statusCode).json({
+            success: error.success,
+            statusCode: error.statusCode,
+            message: error.message,
+            errors: error.errors
+        });
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await AuthUser.findOne({
         where: { email }
     });
 
     if (existingUser) {
-        return res.status(409).json(new apiError(409, "User is already registered", [], ""));
+        const error = new apiError(409, "User is already registered. Please use a different email or try logging in.", [], "");
+        return res.status(error.statusCode).json({
+            success: error.success,
+            statusCode: error.statusCode,
+            message: error.message,
+            errors: error.errors
+        });
     }
 
     // Upload avatar if provided
-    // upload.any() stores files in req.files array, not req.file
-    const avatarFile = req.files && req.files.length > 0 ? req.files[0] : null;
+    // upload.single() stores file in req.file
+    const avatarFile = req.file;
     console.log("avatarFile", avatarFile);
     
     const localFilePath = avatarFile?.path;
@@ -72,19 +97,66 @@ export const registerUser = asyncHandler(async (req, res) => {
     const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
 
     // Create user
-    const createdUser = await prisma.user.create({
-        data: {
+    try {
+        const createdUser = await AuthUser.create({
             username,
             email,
             password: hashedPassword,
             avatar: avatarUrl,
-        },
-    });
+        });
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = createdUser;
+        // Remove password from response
+        const { password: _, ...userWithoutPassword } = createdUser.toJSON();
 
-    return res.status(201).json(new apiResponse(201, "User created successfully", userWithoutPassword));
+        return res.status(201).json(
+            new apiResponse(201, "User created successfully", userWithoutPassword)
+        );
+    } catch (dbError) {
+        console.error("Database error creating user:", dbError);
+        
+        // Check if it's a unique constraint error (duplicate email only)
+        if (dbError.name === 'SequelizeUniqueConstraintError') {
+            const field = dbError.errors?.[0]?.path || 'field';
+            // Only check for email duplicates, not username
+            if (field === 'email') {
+                const error = new apiError(409, "Email already exists. Please use a different email or try logging in.", [], "");
+                return res.status(error.statusCode).json({
+                    success: error.success,
+                    statusCode: error.statusCode,
+                    message: error.message,
+                    errors: error.errors
+                });
+            }
+            // If it's a username constraint error, it shouldn't happen, but handle it gracefully
+            const error = new apiError(409, "Registration failed. Please try again.", [], "");
+            return res.status(error.statusCode).json({
+                success: error.success,
+                statusCode: error.statusCode,
+                message: error.message,
+                errors: error.errors
+            });
+        }
+        
+        // Check if table doesn't exist
+        if (dbError.message && dbError.message.includes("doesn't exist")) {
+            const error = new apiError(500, "Database table not found. Please run migrations: npx sequelize-cli db:migrate", [], "");
+            return res.status(error.statusCode).json({
+                success: error.success,
+                statusCode: error.statusCode,
+                message: error.message,
+                errors: error.errors
+            });
+        }
+        
+        // Generic database error
+        const error = new apiError(500, "Failed to create user. Please try again later.", [], "");
+        return res.status(error.statusCode).json({
+            success: error.success,
+            statusCode: error.statusCode,
+            message: error.message,
+            errors: error.errors
+        });
+    }
 });
 
 export const logInUser = asyncHandler(async (req, res) => {
@@ -93,27 +165,51 @@ export const logInUser = asyncHandler(async (req, res) => {
     
     // Validation
     if (!email || !password) {
-        return res.status(400).json(new apiError(400, "Email and password are required", [], ""));
+        const error = new apiError(400, "Email and password are required", [], "");
+        return res.status(error.statusCode).json({
+            success: error.success,
+            statusCode: error.statusCode,
+            message: error.message,
+            errors: error.errors
+        });
     }
 
     // Check if user exists - login with email only
-    const user = await prisma.user.findUnique({
+    const user = await AuthUser.findOne({
         where: { email }
     });
     
     if (!user) {
-        return res.status(401).json(new apiError(401, "Invalid Credentials", [], ""));
+        const error = new apiError(401, "Invalid Credentials", [], "");
+        return res.status(error.statusCode).json({
+            success: error.success,
+            statusCode: error.statusCode,
+            message: error.message,
+            errors: error.errors
+        });
     }
     
     // Check if password exists (for OAuth users without password)
     if (!user.password) {
-        return res.status(401).json(new apiError(401, "Please login using Google", [], ""));
+        const error = new apiError(401, "Please login using Google", [], "");
+        return res.status(error.statusCode).json({
+            success: error.success,
+            statusCode: error.statusCode,
+            message: error.message,
+            errors: error.errors
+        });
     }
     
     // Check if password is correct
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) {
-        return res.status(401).json(new apiError(401, "Invalid Credentials", [], ""));
+        const error = new apiError(401, "Invalid Credentials", [], "");
+        return res.status(error.statusCode).json({
+            success: error.success,
+            statusCode: error.statusCode,
+            message: error.message,
+            errors: error.errors
+        });
     }
     
     // Generate token with user data and rememberMe preference
@@ -133,12 +229,14 @@ export const logInUser = asyncHandler(async (req, res) => {
     });
     
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
-    
-    return res.status(200).json(new apiResponse(200, "Login successful", {
-        user: userWithoutPassword,
-        accessToken
-    }));
+    const { password: _, ...userWithoutPassword } = user.toJSON();
+
+    return res.status(200).json(
+        new apiResponse(200, "Login successful", {
+            user: userWithoutPassword,
+            accessToken
+        })
+    );
 });
 
 

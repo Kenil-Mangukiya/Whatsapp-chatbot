@@ -22,7 +22,7 @@ module.exports = (sequelize, DataTypes) => {
     username: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      unique: true,
+      unique: false,
       comment: 'Username for authentication'
     },
     email: {
@@ -48,10 +48,12 @@ module.exports = (sequelize, DataTypes) => {
     timestamps: true,
     indexes: [
       {
-        fields: ['email']
+        fields: ['email'],
+        unique: true
       },
       {
-        fields: ['username']
+        fields: ['username'],
+        unique: false
       }
     ]
   });
