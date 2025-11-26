@@ -11,7 +11,8 @@ const config = {
     jwtSecret: process.env.JWT_SECRET,
     upmatrixUri: process.env.UPMATRIX_URI,
     upmatrixToken: process.env.UPMATRIX_TOKEN,
-    gptKey: process.env.GPT_KEY
+    gptKey: process.env.GPT_KEY,
+    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY
 }
 
 export default config;
