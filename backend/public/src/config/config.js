@@ -10,7 +10,8 @@ const config = {
     googleClientId: process.env.GOOGLE_CLIENT_ID,
     jwtSecret: process.env.JWT_SECRET,
     upmatrixUri: process.env.UPMATRIX_URI,
-    upmatrixToken: process.env.UPMATRIX_TOKEN
+    upmatrixToken: process.env.UPMATRIX_TOKEN,
+    gptKey: process.env.GPT_KEY
 }
 
 export default config;
