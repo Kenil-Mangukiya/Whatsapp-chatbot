@@ -16,6 +16,7 @@ import TeamPage from './pages/TeamPage';
 import SupportPage from './pages/SupportPage';
 import DashboardNewPage from './pages/DashboardNewPage';
 import SetupPage from './pages/SetupPage';
+import PricingSetupPage from './pages/PricingSetupPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -55,6 +56,11 @@ function App() {
         <Route path="/setup" element={
           <ProtectedRoute>
             <SetupPage isActive={true} />
+          </ProtectedRoute>
+        } />
+        <Route path="/pricing-setup" element={
+          <ProtectedRoute>
+            <PricingSetupPage isActive={true} />
           </ProtectedRoute>
         } />
         <Route path="/" element={
