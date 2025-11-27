@@ -15,11 +15,10 @@ import SettingsPage from './pages/SettingsPage';
 import TeamPage from './pages/TeamPage';
 import SupportPage from './pages/SupportPage';
 import DashboardNewPage from './pages/DashboardNewPage';
+import SetupPage from './pages/SetupPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
-  // For now, we'll use a simple approach without authentication context
-  // In production, you'd want to use Context API or Redux for auth state
-  
   return (
     <Router>
       <Toaster 
@@ -53,10 +52,19 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/" element={<Dashboard />}>
+        <Route path="/setup" element={
+          <ProtectedRoute>
+            <SetupPage isActive={true} />
+          </ProtectedRoute>
+        } />
+        <Route path="/" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }>
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage isActive={true} />} />
-          <Route path="dashboard-new" element={<DashboardNewPage isActive={true} />} />
+          <Route path="dashboard-new" element={<DashboardPage isActive={true} />} />
+          <Route path="dashboard" element={<DashboardNewPage isActive={true} />} />
           <Route path="agents" element={<AgentsPage isActive={true} />} />
           <Route path="voice-lab" element={<VoiceLabPage isActive={true} />} />
           <Route path="calls" element={<CallsPage isActive={true} />} />

@@ -1,46 +1,40 @@
 import jwt from "jsonwebtoken";
 import config from "../config/config.js";
+import { AuthUser } from "../db/index.js";
 import apiError from "../utils/apiError.js";
-import asyncHandler from "../utils/asyncHandler.js";
 
-// Middleware to verify JWT token and attach user info to request
-const authMiddleware = asyncHandler(async (req, res, next) => {
+// Authentication middleware to protect routes
+export const authenticate = async (req, res, next) => {
     try {
-        // Get token from cookies or Authorization header
-        let token = req.cookies?.accessToken;
+        // Get token from cookie
+        const token = req.cookies?.authToken;
         
-        if (!token && req.headers.authorization) {
-            // Extract token from Bearer token
-            const authHeader = req.headers.authorization;
-            if (authHeader.startsWith('Bearer ')) {
-                token = authHeader.substring(7);
-            }
-        }
-
         if (!token) {
-            return res.status(401).json(new apiError(401, "Authentication required. Please login.", [], ""));
+            throw new apiError(401, "Authentication required. Please login.");
         }
-
+        
         // Verify token
-        if (!config.jwtSecret) {
-            return res.status(500).json(new apiError(500, "JWT secret is not configured", [], ""));
-        }
         const decoded = jwt.verify(token, config.jwtSecret);
         
-        // Attach user ID to request
-        req.userId = decoded._id;
-        req.userEmail = decoded.email;
+        // Find user by ID from token
+        const user = await AuthUser.findByPk(decoded._id);
+        
+        if (!user) {
+            throw new apiError(401, "User not found. Please login again.");
+        }
+        
+        // Attach user to request object
+        req.user = user;
+        req.userId = user.id;
         
         next();
     } catch (error) {
         if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json(new apiError(401, "Invalid token. Please login again.", [], ""));
+            throw new apiError(401, "Invalid token. Please login again.");
+        } else if (error.name === 'TokenExpiredError') {
+            throw new apiError(401, "Token expired. Please login again.");
+        } else {
+            throw error;
         }
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json(new apiError(401, "Token expired. Please login again.", [], ""));
-        }
-        return res.status(401).json(new apiError(401, "Authentication failed", [], ""));
     }
-});
-
-export default authMiddleware;
+};

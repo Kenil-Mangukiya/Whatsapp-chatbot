@@ -40,6 +40,12 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(500),
       allowNull: true,
       comment: 'Avatar URL from Cloudinary'
+    },
+    phoneNumber: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      unique: true,
+      comment: 'Phone number for OTP authentication'
     }
   }, {
     sequelize,
@@ -54,6 +60,10 @@ module.exports = (sequelize, DataTypes) => {
       {
         fields: ['username'],
         unique: false
+      },
+      {
+        fields: ['phoneNumber'],
+        unique: true
       }
     ]
   });

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Phone, Lock } from 'lucide-react';
 import { loginUser, LoginUserData, sendOTP } from '../services/apis/authAPI';
 import toast from 'react-hot-toast';
@@ -9,11 +9,12 @@ const LoginPage = () => {
   
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
-  const [sentOtp, setSentOtp] = useState<string | null>(null);
   const [isPhoneValidated, setIsPhoneValidated] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
+  const [timer, setTimer] = useState(300); // 5 minutes in seconds (300 seconds)
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Format phone number - add 91 if not present
   const formatPhoneNumber = (phone: string): string => {
@@ -68,28 +69,40 @@ const LoginPage = () => {
     }
   };
 
-  // Extract OTP from WhatsApp response
-  const extractOTPFromResponse = (response: any): string | null => {
-    try {
-      // OTP is in: newMessage.message.components[0].text
-      // Format: "*647113* is your verification code."
-      const text = response?.data?.newMessage?.message?.components?.[0]?.text;
-      if (!text) {
-        return null;
-      }
-      
-      // Extract OTP between asterisks: *647113*
-      const otpMatch = text.match(/\*(\d+)\*/);
-      if (otpMatch && otpMatch[1]) {
-        return otpMatch[1];
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error extracting OTP:', error);
-      return null;
-    }
+  // Format timer as MM:SS
+  const formatTimer = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Start timer countdown
+  const startTimer = () => {
+    setTimer(300); // Reset to 5 minutes
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    timerRef.current = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
   // Handle confirm button click - validate phone number and send OTP
   const handleConfirmPhone = async () => {
@@ -115,17 +128,10 @@ const LoginPage = () => {
     setSendingOtp(true);
     
     try {
-      const response = await sendOTP(formattedPhoneNumber);
-      const extractedOtp = extractOTPFromResponse(response);
-      
-      if (extractedOtp) {
-        setSentOtp(extractedOtp);
-        setIsPhoneValidated(true);
-        toast.success('OTP sent successfully! Please check your WhatsApp.');
-      } else {
-        toast.error('Failed to extract OTP from response. Please try again.');
-        console.error('Could not extract OTP from response:', response);
-      }
+      await sendOTP(formattedPhoneNumber);
+      setIsPhoneValidated(true);
+      startTimer(); // Start the 5-minute timer
+      toast.success('OTP sent successfully! Please check your WhatsApp.');
     } catch (error: any) {
       console.error('Error sending OTP:', error);
       const errorMessage = error?.response?.data?.message 
@@ -138,6 +144,46 @@ const LoginPage = () => {
     }
   };
 
+  // Handle resend OTP
+  const handleResendOTP = async () => {
+    // Clear previous OTP input
+    setOtp('');
+    setErrors({});
+    
+    // Format phone number
+    const formattedPhoneNumber = formatPhoneNumber(phoneNumber);
+    
+    // Resend OTP
+    setSendingOtp(true);
+    try {
+      await sendOTP(formattedPhoneNumber);
+      startTimer(); // Restart the 5-minute timer
+      toast.success('OTP resent successfully! Please check your WhatsApp.');
+    } catch (error: any) {
+      console.error('Error resending OTP:', error);
+      const errorMessage = error?.response?.data?.message 
+        || error?.data?.message 
+        || error?.message 
+        || 'Failed to resend OTP. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  // Handle back to phone number field
+  const handleBackToPhone = () => {
+    setIsPhoneValidated(false);
+    setOtp('');
+    setErrors({});
+    // Stop timer if running
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setTimer(300); // Reset timer
+  };
+
   // Handle OTP submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,19 +192,6 @@ const LoginPage = () => {
     // Validation
     if (!otp || otp.length !== 6) {
       newErrors.otp = 'Please enter a valid 6-digit OTP';
-      setErrors(newErrors);
-      return;
-    }
-
-    // Validate OTP against sent OTP
-    if (!sentOtp) {
-      newErrors.otp = 'OTP not found. Please request a new OTP.';
-      setErrors(newErrors);
-      return;
-    }
-
-    if (otp !== sentOtp) {
-      newErrors.otp = 'Invalid OTP. Please check and try again.';
       setErrors(newErrors);
       return;
     }
@@ -211,8 +244,8 @@ const LoginPage = () => {
               </svg>
             </div>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
-          <p className="mt-2 text-sm text-gray-600">Sign in to your RoadAI Assistant account</p>
+          <h2 className="text-3xl font-bold text-gray-900">Welcome</h2>
+          <p className="mt-2 text-sm text-gray-600">Sign in or create your RoadAI Assistant account</p>
         </div>
 
         {/* Form */}
@@ -260,6 +293,21 @@ const LoginPage = () => {
             ) : (
               /* OTP Input */
               <div>
+                {/* Back to Phone Number Button */}
+                <div className="mb-4">
+                  <button
+                    type="button"
+                    onClick={handleBackToPhone}
+                    disabled={loading || sendingOtp}
+                    className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    Edit Phone Number
+                  </button>
+                </div>
+                
                 <label htmlFor="otp" className="block text-lg font-medium text-gray-700 mb-2">
                   Enter 6-Digit OTP <span className="text-red-500">*</span>
                 </label>
@@ -285,6 +333,24 @@ const LoginPage = () => {
                   <p className="mt-1 text-sm text-red-600">{errors.otp}</p>
                 )}
                 
+                {/* Timer and Resend Section */}
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">OTP expires in:</span>
+                    <span className={`text-sm font-semibold ${timer <= 60 ? 'text-red-600' : 'text-indigo-600'}`}>
+                      {formatTimer(timer)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleResendOTP}
+                    disabled={sendingOtp}
+                    className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {sendingOtp ? 'Sending...' : 'Resend OTP'}
+                  </button>
+                </div>
+                
                 {/* Submit Button */}
                 <div className="mt-4">
                   <button
@@ -299,13 +365,6 @@ const LoginPage = () => {
             )}
           </div>
 
-          {/* Register Link */}
-          <div className="text-center">
-            <span className="text-sm text-gray-600">Don't have an account? </span>
-            <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
-              Sign up
-            </Link>
-          </div>
         </form>
       </div>
     </div>
