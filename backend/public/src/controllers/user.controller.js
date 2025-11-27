@@ -38,8 +38,6 @@ export const sendWhatsppOTP = asyncHandler(async (req, res) => {
         console.log("error is : ", error);
         return res.status(500).json(new apiError(500, "Something went wrong", error.message));
     }
-
-
 })
 
 

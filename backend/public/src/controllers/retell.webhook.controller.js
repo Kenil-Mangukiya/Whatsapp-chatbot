@@ -4,6 +4,7 @@ import apiError from "../utils/apiError.js";
 import { storeCallHistoryData } from "../services/retell.service.js";
 import { CallHistory, sequelize } from "../db/index.js";
 import { Op } from "sequelize";
+import { sendWhatsappOTP } from "../services/whatsapp.service.js";
 
 export const retellWebhook = asyncHandler(async (req, res) => {
     console.log("retell webhook received : ", req.body);
@@ -160,3 +161,30 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
         throw new apiError(500, "Error retrieving dashboard stats", error.message);
     }
 });
+
+export const sendWhatsppTemplate = asyncHandler(async (req, res) => {
+    console.log("Retell webhook received for sendWhatsppTemplate : ", req.body);
+    
+    try
+    {
+        // Extract from_number from call object
+        const from_number = req.body?.call?.from_number;
+        
+        console.log("Extracted from_number is : ", from_number);
+        
+        if (!from_number) {
+            throw new apiError(400, "from_number is required in call object");
+        }
+
+        // Call sendWhatsappOTP with the extracted phone number
+        const response = await sendWhatsappOTP(from_number);
+        console.log("WhatsApp OTP response is : ", response);
+        
+        return res.status(200).json(new apiResponse(200, "Whatsapp OTP sent", response.data));
+    }
+    catch(error)
+    {
+        console.error("Error sending WhatsApp OTP:", error);
+        return res.status(500).json(new apiError(500, "Something went wrong", error.message));
+    }
+})
