@@ -14,6 +14,8 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
   const [loading, setLoading] = useState(true);
   const [selectedCall, setSelectedCall] = useState<CallHistoryItem | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 10;
 
   // Fetch call history on component mount
   useEffect(() => {
@@ -69,10 +71,27 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
     return dynamicVars.location || 'Null';
   };
 
-  // Get issue from dynamic_variables
+  // Get issue from dynamic_variables - improved to handle various formats
   const getIssue = (dynamicVars: { [key: string]: any } | null): string => {
-    if (!dynamicVars) return 'Null';
-    return dynamicVars.issue || dynamicVars.problem || 'Null';
+    if (!dynamicVars || typeof dynamicVars !== 'object') return 'Null';
+    
+    // Try multiple possible field names for issue
+    const issueValue = dynamicVars.issue || 
+                       dynamicVars.problem || 
+                       dynamicVars.issue_description ||
+                       dynamicVars.description ||
+                       dynamicVars.request ||
+                       dynamicVars.service_request ||
+                       null;
+    
+    // If found, return it (handle both string and other types)
+    if (issueValue !== null && issueValue !== undefined) {
+      // Convert to string and trim
+      const issueStr = String(issueValue).trim();
+      return issueStr || 'Null';
+    }
+    
+    return 'Null';
   };
 
   // Parse transcript into chat messages (Agent and User)
@@ -120,14 +139,10 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
     // Search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      const customerName = getCustomerName(call.dynamic_variables).toLowerCase();
-      const location = getLocation(call.dynamic_variables).toLowerCase();
       const issue = getIssue(call.dynamic_variables).toLowerCase();
       const transcript = (call.transcript || '').toLowerCase();
       
-      if (!customerName.includes(searchLower) && 
-          !location.includes(searchLower) && 
-          !issue.includes(searchLower) &&
+      if (!issue.includes(searchLower) &&
           !transcript.includes(searchLower)) {
         return false;
       }
@@ -174,14 +189,34 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
     switch (filterType) {
       case 'issue':
         setIssueFilter(value);
+        setCurrentPage(1); // Reset to first page when filter changes
         break;
       case 'time':
         setTimeFilter(value);
+        setCurrentPage(1); // Reset to first page when filter changes
         break;
       default:
         break;
     }
   };
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredCalls.length / recordsPerPage);
+  const indexOfLastRecord = currentPage * recordsPerPage;
+  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  const currentRecords = filteredCalls.slice(indexOfFirstRecord, indexOfLastRecord);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top of table when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Reset to first page when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   return (
     <div className={`page-content ${isActive ? 'active' : ''}`}>
@@ -189,17 +224,6 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
         <div>
           <h1>Call History</h1>
           <p>View and manage all customer calls handled by your AI agent</p>
-        </div>
-        <div className="page-actions">
-          <button 
-            className="btn btn-primary"
-            onClick={() => toast('Test call feature coming soon')}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-            </svg>
-            Make Test Call
-          </button>
         </div>
       </div>
 
@@ -211,7 +235,7 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
           </svg>
           <input 
             type="text" 
-            placeholder="Search calls by customer, location, or issue..."
+            placeholder="Search calls by issue..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -255,64 +279,143 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
           <p>{calls.length === 0 ? 'Your AI agent is ready. Make a test call to see it in action!' : 'No calls match your filters.'}</p>
         </div>
       ) : (
-        <div className="calls-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Phone Number</th>
-                <th>Customer Name</th>
-                <th>Location</th>
-                <th>Issue</th>
-                <th>Duration</th>
-                <th>Sentiment</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCalls.map((call, index) => {
-                const { date, time } = formatDateTime(call.created_at);
-                const customerName = getCustomerName(call.dynamic_variables);
-                const location = getLocation(call.dynamic_variables);
-                const issue = getIssue(call.dynamic_variables);
-                const duration = formatDuration(call.duration_ms);
+        <>
+          <div className="calls-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Issue</th>
+                  <th>Duration</th>
+                  <th>Sentiment</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentRecords.map((call, index) => {
+                  const { date, time } = formatDateTime(call.created_at);
+                  const issue = getIssue(call.dynamic_variables);
+                  const duration = formatDuration(call.duration_ms);
 
-                return (
-                  <tr key={index}>
-                    <td>
-                      <div className="time-cell">
-                        <span className="date">{date}</span>
-                        <span className="time">{time}</span>
-                      </div>
-                    </td>
-                    <td>{call.to_number || 'Null'}</td>
-                    <td>
-                      <div className="customer-name">{customerName}</div>
-                    </td>
-                    <td>{location}</td>
-                    <td>
-                      <span className="issue-badge">{issue}</span>
-                    </td>
-                    <td>{duration}</td>
-                    <td>
-                      <span className={`sentiment-badge sentiment-${(call.call_sentiment || 'Unknown').toLowerCase()}`}>
-                        {call.call_sentiment || 'Null'}
-                      </span>
-                    </td>
-                    <td>
-                      <button 
-                        className="btn-view-details"
-                        onClick={() => handleViewDetails(call)}
+                  return (
+                    <tr key={index}>
+                      <td>
+                        <div className="time-cell">
+                          <span className="date">{date}</span>
+                          <span className="time">{time}</span>
+                        </div>
+                      </td>
+                      <td>{call.from_number || 'Null'}</td>
+                      <td>{call.to_number || 'Null'}</td>
+                      <td>
+                        <span className="issue-badge" title={issue}>
+                          {issue}
+                        </span>
+                      </td>
+                      <td>{duration}</td>
+                      <td>
+                        <span className={`sentiment-badge sentiment-${(call.call_sentiment || 'Unknown').toLowerCase()}`}>
+                          {call.call_sentiment || 'Null'}
+                        </span>
+                      </td>
+                      <td>
+                        <button 
+                          className="btn-view-details"
+                          onClick={() => handleViewDetails(call)}
+                        >
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="pagination" style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              gap: '10px', 
+              marginTop: '20px',
+              padding: '20px'
+            }}>
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                style={{
+                  padding: '8px 16px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  backgroundColor: currentPage === 1 ? '#f5f5f5' : '#fff',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  color: currentPage === 1 ? '#999' : '#333'
+                }}
+              >
+                Previous
+              </button>
+              
+              <div style={{ display: 'flex', gap: '5px' }}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  // Show first page, last page, current page, and pages around current
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        style={{
+                          padding: '8px 12px',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          backgroundColor: currentPage === page ? '#6366f1' : '#fff',
+                          color: currentPage === page ? '#fff' : '#333',
+                          cursor: 'pointer',
+                          fontWeight: currentPage === page ? 'bold' : 'normal'
+                        }}
                       >
-                        View Details
+                        {page}
                       </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    );
+                  } else if (
+                    page === currentPage - 2 ||
+                    page === currentPage + 2
+                  ) {
+                    return <span key={page} style={{ padding: '8px' }}>...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+              
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: '8px 16px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  backgroundColor: currentPage === totalPages ? '#f5f5f5' : '#fff',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                  color: currentPage === totalPages ? '#999' : '#333'
+                }}
+              >
+                Next
+              </button>
+              
+              <span style={{ marginLeft: '10px', color: '#666', fontSize: '14px' }}>
+                Showing {indexOfFirstRecord + 1} to {Math.min(indexOfLastRecord, filteredCalls.length)} of {filteredCalls.length} calls
+              </span>
+            </div>
+          )}
+        </>
       )}
 
       {/* View Details Modal */}

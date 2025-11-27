@@ -20,6 +20,7 @@ export interface CallHistoryItem {
     [key: string]: any;
   } | null;
   to_number: string | null;
+  from_number: string | null;
 }
 
 export interface CallHistoryResponse {

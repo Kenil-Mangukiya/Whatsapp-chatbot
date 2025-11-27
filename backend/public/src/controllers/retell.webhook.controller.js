@@ -51,6 +51,7 @@ export const getCallHistory = asyncHandler(async (req, res) => {
                 'disconnection_reason',
                 'call_analysis',
                 'dynamic_variables',
+                'from_number',
                 'to_number'
             ]
         });
@@ -71,6 +72,7 @@ export const getCallHistory = asyncHandler(async (req, res) => {
                 call_sentiment: callAnalysis.user_sentiment || null, // user_sentiment from call_analysis
                 call_successful: callAnalysis.call_successful !== undefined ? callAnalysis.call_successful : null,
                 dynamic_variables: dynamicVars,
+                from_number: record.from_number || null,
                 to_number: record.to_number || null
             };
         });
