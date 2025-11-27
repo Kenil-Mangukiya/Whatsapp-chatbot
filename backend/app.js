@@ -7,6 +7,7 @@ import retellWebhookRoutes from "./public/src/routes/retell.route.js";
 import locationRoutes from "./public/src/routes/location.route.js";
 import { userRoutes } from "./public/src/routes/user.route.js";
 import config from "./public/src/config/config.js";
+import bolnaRoutes from "./public/src/routes/bolna.route.js";
 
 const app = express();
 
@@ -23,7 +24,7 @@ app.use(cookieParser());
 
 // Routes
 app.use('/', healthRoutes);
-app.use('/api', webhookRoutes, retellWebhookRoutes, locationRoutes);
+app.use('/api', webhookRoutes, retellWebhookRoutes, locationRoutes, bolnaRoutes);
 app.use('/api/user', userRoutes);
 // Basic route
 app.get('/', (req, res) => {
