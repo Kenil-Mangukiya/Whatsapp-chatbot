@@ -114,11 +114,22 @@ export const saveSetupData = async (data: SetupData) => {
   }
 };
 
+export const logoutUser = async () => {
+  try {
+    const response: any = await api.post('/user/logout');
+    console.log("Logout response:", response);
+    return response;
+  } catch (error) {
+    throw getErrorDetails(error);
+  }
+};
+
 export default {
   registerUser,
   authGoogleUser,
   loginUser,
   sendOTP,
   saveSetupData,
+  logoutUser,
 };
 

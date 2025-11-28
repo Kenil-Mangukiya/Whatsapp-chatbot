@@ -67,8 +67,34 @@ export const getDashboardStats = async (): Promise<DashboardStatsResponse> => {
   }
 };
 
+export interface CallsPerDayItem {
+  date: string;
+  count: number;
+}
+
+export interface CallsPerDayResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: CallsPerDayItem[];
+}
+
+export const getCallsPerDay = async (startDate?: string, endDate?: string): Promise<CallsPerDayResponse> => {
+  try {
+    const params: any = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    
+    const response: any = await api.get('/retell/calls-per-day', { params });
+    return response;
+  } catch (error) {
+    throw getErrorDetails(error);
+  }
+};
+
 export default {
   getCallHistory,
   getDashboardStats,
+  getCallsPerDay,
 };
 

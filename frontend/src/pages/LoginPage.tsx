@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Phone, Lock } from 'lucide-react';
 import { loginUser, LoginUserData, sendOTP } from '../services/apis/authAPI';
 import toast from 'react-hot-toast';
+import api from '../config/api';
+import { checkSetupStatus } from '../utils/setupUtils';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -15,6 +17,40 @@ const LoginPage = () => {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [timer, setTimer] = useState(300); // 5 minutes in seconds (300 seconds)
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Check if user is already authenticated on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const userResponse: any = await api.get('/user/me');
+        const user = userResponse?.data?.user || userResponse?.user;
+        const setupCompleted = userResponse?.data?.setupCompleted !== undefined 
+          ? userResponse?.data?.setupCompleted 
+          : userResponse?.setupCompleted;
+        
+        if (user) {
+          // User is authenticated, redirect based on setup status
+          const isSetupComplete = setupCompleted !== undefined 
+            ? setupCompleted 
+            : checkSetupStatus(user);
+          
+          if (isSetupComplete) {
+            navigate('/dashboard', { replace: true });
+          } else {
+            navigate('/setup', { replace: true });
+          }
+        }
+      } catch (error) {
+        // User is not authenticated, stay on login page
+        console.log('User not authenticated, showing login page');
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
 
   // Format phone number - add 91 if not present
   const formatPhoneNumber = (phone: string): string => {
@@ -210,11 +246,53 @@ const LoginPage = () => {
         };
         const response = await loginUser(loginData);
         
-        console.log('Login successful:', response);
-        toast.success(response.message || 'Login successful!');
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1500);
+        console.log('Login successful - full response:', response);
+        const message = response?.data?.message || response?.message || 'Login successful!';
+        toast.success(message);
+        
+        // Wait a bit for cookie to be set, then check setup status
+        // Use a longer timeout to ensure cookie is properly set
+        setTimeout(async () => {
+          try {
+            console.log('Checking user setup status...');
+            const userResponse: any = await api.get('/user/me');
+            console.log('User response from /user/me:', userResponse);
+            
+            // Handle different response structures (axios interceptor returns response.data)
+            // So userResponse is already the data object
+            const user = userResponse?.data?.user || userResponse?.user;
+            const setupCompleted = userResponse?.data?.setupCompleted !== undefined 
+              ? userResponse?.data?.setupCompleted 
+              : userResponse?.setupCompleted;
+            
+            console.log('Extracted user data:', user);
+            console.log('Extracted setupCompleted flag:', setupCompleted);
+            
+            // Check setup status
+            let isSetupComplete = false;
+            if (setupCompleted !== undefined) {
+              isSetupComplete = setupCompleted;
+            } else if (user) {
+              isSetupComplete = checkSetupStatus(user);
+            }
+            
+            console.log('Final setup status check - isSetupComplete:', isSetupComplete);
+            
+            // Navigate based on setup status
+            if (isSetupComplete) {
+              console.log('✅ Setup complete - Navigating to dashboard');
+              navigate('/dashboard', { replace: true });
+            } else {
+              console.log('⚠️ Setup incomplete - Navigating to setup page');
+              navigate('/setup', { replace: true });
+            }
+          } catch (error: any) {
+            // If can't check setup, default to setup page for safety
+            console.error('❌ Error checking setup status:', error);
+            console.log('⚠️ Defaulting to setup page due to error');
+            navigate('/setup', { replace: true });
+          }
+        }, 1500); // 1.5 seconds to ensure cookie is set
       } catch (error: any) {
         console.error('Login error:', error);
         // Extract error message from various possible structures
@@ -229,6 +307,18 @@ const LoginPage = () => {
     }
   };
 
+
+  // Show loading while checking auth
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

@@ -141,11 +141,9 @@ const Sidebar = ({ activePage }: SidebarProps) => {
       </ul>
       <div className="sidebar-footer">
         <div className="trial-card">
-          <h4>Free Trial</h4>
           <div className="trial-progress">
-            <span>Free 1 month trial</span>
+            <span className="trial-text">Free 1 month trial</span>
           </div>
-          <button className="upgrade-btn" onClick={() => alert('Upgrade feature coming soon!')}>Upgrade Plan</button>
         </div>
       </div>
     </aside>

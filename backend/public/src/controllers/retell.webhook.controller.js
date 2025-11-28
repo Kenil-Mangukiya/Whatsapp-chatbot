@@ -164,6 +164,63 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     }
 });
 
+/**
+ * Get calls per day statistics
+ * Supports filtering by date range (startDate, endDate)
+ * Returns array of { date, count } objects
+ */
+export const getCallsPerDay = asyncHandler(async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        
+        // Build where clause for date filtering
+        const whereClause = {};
+        if (startDate || endDate) {
+            whereClause.created_at = {};
+            if (startDate) {
+                whereClause.created_at[Op.gte] = new Date(startDate);
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999); // Include entire end date
+                whereClause.created_at[Op.lte] = end;
+            }
+        }
+
+        // Get all calls with created_at
+        const calls = await CallHistory.findAll({
+            where: whereClause,
+            attributes: ['created_at'],
+            order: [['created_at', 'ASC']]
+        });
+
+        // Group calls by date
+        const callsByDate = {};
+        calls.forEach(call => {
+            if (call.created_at) {
+                const date = new Date(call.created_at);
+                const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+                callsByDate[dateKey] = (callsByDate[dateKey] || 0) + 1;
+            }
+        });
+
+        // Convert to array format [{ date, count }]
+        const callsPerDay = Object.keys(callsByDate)
+            .sort()
+            .map(date => ({
+                date,
+                count: callsByDate[date]
+            }));
+
+        return res.status(200).json(
+            new apiResponse(200, "Calls per day retrieved successfully", callsPerDay)
+        );
+    } catch (error) {
+        console.error("Error getting calls per day:", error);
+        throw new apiError(500, "Error retrieving calls per day", error.message);
+    }
+});
+
 export const sendWhatsppTemplate = asyncHandler(async (req, res) => {
     console.log("Retell webhook received for sendWhatsppTemplate : ", req.body);
     

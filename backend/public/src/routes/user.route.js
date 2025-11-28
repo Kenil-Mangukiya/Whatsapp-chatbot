@@ -1,5 +1,5 @@
 import express from "express";
-import { sendWhatsppOTP, loginUser, saveSetupData } from "../controllers/user.controller.js";
+import { sendWhatsppOTP, loginUser, saveSetupData, logoutUser } from "../controllers/user.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import apiResponse from "../utils/apiResponse.js";
@@ -38,5 +38,8 @@ userRoutes.get("/me", authenticate, asyncHandler(async (req, res) => {
 
 // Protected route to save setup data
 userRoutes.post("/setup", authenticate, saveSetupData);
+
+// Logout route
+userRoutes.post("/logout", logoutUser);
 
 export { userRoutes };

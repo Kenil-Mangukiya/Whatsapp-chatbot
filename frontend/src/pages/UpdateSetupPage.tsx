@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { saveSetupData } from '../services/apis/authAPI';
+import api from '../config/api';
 
 interface SetupPageProps {
   isActive?: boolean;
@@ -69,46 +70,63 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
   
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  // Load saved data from localStorage on mount
+  // Fetch user data from backend on mount
   useEffect(() => {
-    const savedData = localStorage.getItem('roadai_setup');
-    if (savedData) {
+    const fetchUserData = async () => {
       try {
-        const parsed = JSON.parse(savedData);
-        setFormData(prev => ({
-          ...prev,
-          businessName: parsed.businessName || '',
-          fullName: parsed.fullName || '',
-          email: parsed.email || '',
-          businessSize: parsed.businessSize || '',
-          serviceArea: parsed.serviceArea || ''
-        }));
-        if (parsed.vehicleTypes) {
-          setVehicleTypes(parsed.vehicleTypes);
-        }
-        if (parsed.startTime) setStartTime(parsed.startTime);
-        if (parsed.endTime) setEndTime(parsed.endTime);
-      } catch (error) {
-        console.error('Error loading saved data:', error);
-      }
-    }
-  }, []);
+        setLoading(true);
+        const response: any = await api.get('/user/me');
+        const user = response?.data?.user || response?.user;
+        
+        if (user) {
+          // Pre-populate form data
+          setFormData({
+            businessName: user.businessName || '',
+            fullName: user.fullName || '',
+            email: user.email || '',
+            businessSize: user.businessSize || '',
+            serviceArea: user.serviceArea || ''
+          });
 
-  // Auto-save to localStorage when form data changes
-  useEffect(() => {
-    const saveData = {
-      businessName: formData.businessName,
-      fullName: formData.fullName,
-      email: formData.email,
-      businessSize: formData.businessSize,
-      serviceArea: formData.serviceArea,
-      vehicleTypes: vehicleTypes,
-      startTime: startTime,
-      endTime: endTime
+          // Pre-populate business hours
+          if (user.startTime) {
+            // Convert TIME format (HH:MM:SS) to HH:MM for time input
+            const startTimeStr = user.startTime.includes(':') 
+              ? user.startTime.substring(0, 5) 
+              : user.startTime;
+            setStartTime(startTimeStr);
+          }
+          if (user.endTime) {
+            // Convert TIME format (HH:MM:SS) to HH:MM for time input
+            const endTimeStr = user.endTime.includes(':') 
+              ? user.endTime.substring(0, 5) 
+              : user.endTime;
+            setEndTime(endTimeStr);
+          }
+
+          // Pre-populate vehicle types
+          if (user.vehicleTypes && Array.isArray(user.vehicleTypes)) {
+            setVehicleTypes(user.vehicleTypes);
+            // Initialize service inputs for each vehicle
+            const initialServiceInputs: Record<string, { serviceName: string; dayPrice: string; nightPrice: string }> = {};
+            user.vehicleTypes.forEach((vehicle: VehicleType) => {
+              initialServiceInputs[vehicle.id] = { serviceName: '', dayPrice: '', nightPrice: '' };
+            });
+            setServiceInputs(initialServiceInputs);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        toast.error('Failed to load business information. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     };
-    localStorage.setItem('roadai_setup', JSON.stringify(saveData));
-  }, [formData.businessName, formData.fullName, formData.email, formData.businessSize, formData.serviceArea, vehicleTypes, startTime, endTime]);
+
+    fetchUserData();
+  }, []);
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -190,6 +208,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
 
     try {
       // Prepare data to send to backend
+      // Always send vehicleTypes array (even if empty) to ensure deletions are saved
       const setupData = {
         businessName: formData.businessName,
         fullName: formData.fullName,
@@ -198,23 +217,20 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
         serviceArea: formData.serviceArea,
         startTime: startTime || undefined,
         endTime: endTime || undefined,
-        vehicleTypes: vehicleTypes.length > 0 ? vehicleTypes : undefined
+        vehicleTypes: vehicleTypes // Always send the array, even if empty
       };
 
       // Send data to backend API
       await saveSetupData(setupData);
       
-      console.log('Form submitted successfully:', setupData);
+      console.log('Form updated successfully:', setupData);
       
-      toast.success('Business details and pricing saved successfully!');
-      
-      // Clear localStorage after successful save
-      localStorage.removeItem('roadai_setup');
+      toast.success('Business details and pricing updated successfully!');
       
       // Wait a moment for the backend to update, then navigate
       setTimeout(() => {
-        // Force navigation to dashboard
-        window.location.href = '/dashboard';
+        // Navigate back to dashboard
+        navigate('/dashboard');
       }, 500);
       
     } catch (error: any) {
@@ -458,6 +474,17 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
     setter(formatted);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your business information...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 ${isActive ? 'active' : ''}`}>
       {/* Navigation */}
@@ -489,10 +516,10 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
           {/* Header */}
           <div className="mb-10 text-center">
             <h1 className="text-4xl font-bold text-gray-900 mb-3">
-              Tell us about your business
+              Update Your Business Information
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              This helps us customize your AI agent to represent your roadside assistance company professionally
+              Update your business details and pricing information
             </p>
           </div>
 
@@ -1043,7 +1070,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
             <div className="flex justify-end gap-4 pt-8">
               <button
                 type="button"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/dashboard')}
                 className="px-8 py-3.5 bg-white border-2 border-gray-300 rounded-lg text-gray-900 font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm hover:shadow-md"
               >
                 Cancel
@@ -1059,10 +1086,10 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Saving...
+                    Updating...
                   </span>
                 ) : (
-                  'Save & Continue'
+                  'Update Information'
                 )}
               </button>
             </div>

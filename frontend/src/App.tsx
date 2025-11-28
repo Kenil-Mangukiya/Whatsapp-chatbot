@@ -16,8 +16,10 @@ import TeamPage from './pages/TeamPage';
 import SupportPage from './pages/SupportPage';
 import DashboardNewPage from './pages/DashboardNewPage';
 import SetupPage from './pages/SetupPage';
+import UpdateSetupPage from './pages/UpdateSetupPage';
 import PricingSetupPage from './pages/PricingSetupPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import SetupRouteGuard from './components/SetupRouteGuard';
 
 function App() {
   return (
@@ -54,8 +56,13 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/setup" element={
-          <ProtectedRoute>
-            <SetupPage isActive={true} />
+          <ProtectedRoute requireSetup={false}>
+            <SetupRouteGuard />
+          </ProtectedRoute>
+        } />
+        <Route path="/update-setup" element={
+          <ProtectedRoute requireSetup={false}>
+            <UpdateSetupPage isActive={true} />
           </ProtectedRoute>
         } />
         <Route path="/pricing-setup" element={

@@ -16,7 +16,7 @@ const generateToken = (userId, phoneNumber, rememberMe = false) => {
         phoneNumber: phoneNumber
     };
     
-    // If remember me is checked, token expires in 30 days, otherwise 7 days
+    // Token expires in 7 days minimum (or 30 days if remember me)
     const expiresIn = rememberMe ? "30d" : "7d";
     
     return jwt.sign(payload, config.jwtSecret, {
@@ -57,12 +57,17 @@ export const sendWhatsppOTP = asyncHandler(async (req, res) => {
     
     try {
         const response = await sendWhatsappOTP(phoneNumber);
-        console.log("WhatsApp response is : ", response);
+        console.log("WhatsApp response from upmatrix is : ", JSON.stringify(response?.data, null, 2));
         
         // Extract OTP from response
         const extractedOtp = extractOTPFromResponse(response);
         
         if (extractedOtp) {
+            // Log the OTP that was sent from upmatrix
+            console.log("===========================================");
+            console.log(`OTP sent from upmatrix for phone ${phoneNumber}: ${extractedOtp}`);
+            console.log("===========================================");
+            
             // Store OTP for validation
             storeOTP(phoneNumber, extractedOtp);
             console.log("OTP stored for phone number:", phoneNumber);
@@ -74,7 +79,7 @@ export const sendWhatsppOTP = asyncHandler(async (req, res) => {
                 })
             );
         } else {
-            console.error("Could not extract OTP from response:", response);
+            console.error("Could not extract OTP from response:", JSON.stringify(response?.data, null, 2));
             throw new apiError(500, "Failed to extract OTP from response");
         }
     } catch (error) {
@@ -224,8 +229,14 @@ export const saveSetupData = asyncHandler(async (req, res) => {
         updateData.endTime = endTime;
     }
     
-    if (vehicleTypes && Array.isArray(vehicleTypes)) {
-        updateData.vehicleTypes = vehicleTypes;
+    // Always update vehicleTypes - send empty array if no vehicle types
+    // This ensures deletions are properly saved
+    if (vehicleTypes !== undefined) {
+        if (Array.isArray(vehicleTypes)) {
+            updateData.vehicleTypes = vehicleTypes.length > 0 ? vehicleTypes : null;
+        } else {
+            updateData.vehicleTypes = null;
+        }
     }
     
     // Update user with setup data
@@ -247,6 +258,22 @@ export const saveSetupData = asyncHandler(async (req, res) => {
                 endTime: user.endTime,
                 vehicleTypes: user.vehicleTypes
             }
+        })
+    );
+});
+
+// Logout endpoint
+export const logoutUser = asyncHandler(async (req, res) => {
+    // Clear the auth token cookie
+    res.clearCookie('authToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+    });
+    
+    return res.status(200).json(
+        new apiResponse(200, "Logged out successfully", {
+            message: "You have been logged out successfully"
         })
     );
 });
