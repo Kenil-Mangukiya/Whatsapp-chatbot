@@ -124,6 +124,61 @@ export const logoutUser = async () => {
   }
 };
 
+export interface BusinessData {
+  id: number;
+  businessName: string;
+  phoneNumber: string;
+  fullName: string;
+  email: string | null;
+  businessSize: string | null;
+  serviceArea: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  vehicleTypes: any[] | null;
+  createdAt: string;
+  updatedAt: string;
+  assignedPhoneNumber?: string | null;
+}
+
+export const getAllBusinesses = async (): Promise<{ data: BusinessData[] }> => {
+  try {
+    const response: any = await api.get('/user/businesses');
+    console.log("Get businesses response:", response);
+    return response;
+  } catch (error) {
+    throw getErrorDetails(error);
+  }
+};
+
+export interface AssignPhoneData {
+  businessId: number;
+  phoneNumber: string;
+}
+
+export interface RemovePhoneData {
+  businessId: number;
+}
+
+export const assignPhoneNumber = async (data: AssignPhoneData) => {
+  try {
+    const response: any = await api.post('/user/assign-phone', data);
+    console.log("Assign phone number response:", response);
+    return response;
+  } catch (error) {
+    throw getErrorDetails(error);
+  }
+};
+
+export const removePhoneNumber = async (data: RemovePhoneData) => {
+  try {
+    const response: any = await api.post('/user/remove-phone', data);
+    console.log("Remove phone number response:", response);
+    return response;
+  } catch (error) {
+    throw getErrorDetails(error);
+  }
+};
+
 export default {
   registerUser,
   authGoogleUser,
@@ -131,5 +186,8 @@ export default {
   sendOTP,
   saveSetupData,
   logoutUser,
+  getAllBusinesses,
+  assignPhoneNumber,
+  removePhoneNumber,
 };
 

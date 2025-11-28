@@ -74,6 +74,13 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.JSON,
       allowNull: true,
       comment: 'Vehicle types with services and pricing (JSON array)'
+    },
+    // Assigned Phone Number (for admin assignment)
+    assignedPhoneNumber: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      unique: true,
+      comment: 'Assigned phone number for business operations'
     }
   }, {
     sequelize,

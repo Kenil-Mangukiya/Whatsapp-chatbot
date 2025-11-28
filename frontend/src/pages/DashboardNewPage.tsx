@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getDashboardStats, DashboardStats } from '../services/apis/callAPI';
 import CallsPerDayChart from '../components/CallsPerDayChart';
+import SentimentPieChart from '../components/SentimentPieChart';
 import toast from 'react-hot-toast';
 
 interface DashboardNewPageProps {
@@ -240,6 +241,14 @@ const DashboardNewPage: React.FC<DashboardNewPageProps> = ({ isActive }) => {
 
       <div className="chart-section">
         <CallsPerDayChart isActive={isActive} />
+      </div>
+
+      {/* Sentiment Pie Chart Section */}
+      <div className="chart-section" style={{ marginTop: '2rem' }}>
+        <SentimentPieChart 
+          sentimentCounts={stats?.sentimentCounts || { Positive: 0, Negative: 0, Neutral: 0, Unknown: 0 }}
+          loading={loading}
+        />
       </div>
     </div>
   );

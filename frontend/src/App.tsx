@@ -17,6 +17,7 @@ import SupportPage from './pages/SupportPage';
 import DashboardNewPage from './pages/DashboardNewPage';
 import SetupPage from './pages/SetupPage';
 import UpdateSetupPage from './pages/UpdateSetupPage';
+import AdminPage from './pages/AdminPage';
 import PricingSetupPage from './pages/PricingSetupPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import SetupRouteGuard from './components/SetupRouteGuard';
@@ -63,6 +64,11 @@ function App() {
         <Route path="/update-setup" element={
           <ProtectedRoute requireSetup={false}>
             <UpdateSetupPage isActive={true} />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute requireSetup={false}>
+            <AdminPage />
           </ProtectedRoute>
         } />
         <Route path="/pricing-setup" element={

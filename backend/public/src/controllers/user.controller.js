@@ -8,6 +8,7 @@ import config from "../config/config.js";
 import { AuthUser } from "../db/index.js";
 import { sendWhatsappOTP } from "../services/whatsapp.service.js";
 import { storeOTP, verifyOTP } from "../utils/otpStore.js";
+import { Op } from "sequelize";
 
 // Generate JWT token with user data
 const generateToken = (userId, phoneNumber, rememberMe = false) => {
@@ -276,6 +277,193 @@ export const logoutUser = asyncHandler(async (req, res) => {
             message: "You have been logged out successfully"
         })
     );
+});
+
+// Get all businesses (Admin endpoint)
+export const getAllBusinesses = asyncHandler(async (req, res) => {
+    try {
+        const businesses = await AuthUser.findAll({
+            attributes: [
+                'id',
+                'businessName',
+                'phoneNumber',
+                'fullName',
+                'email',
+                'businessSize',
+                'serviceArea',
+                'startTime',
+                'endTime',
+                'vehicleTypes',
+                'assignedPhoneNumber',
+                'createdAt',
+                'updatedAt'
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+        // Format the data
+        const formattedBusinesses = businesses.map(business => ({
+            id: business.id,
+            businessName: business.businessName || 'N/A',
+            phoneNumber: business.phoneNumber || 'N/A',
+            fullName: business.fullName || 'N/A',
+            email: business.email || null,
+            businessSize: business.businessSize || null,
+            serviceArea: business.serviceArea || null,
+            startTime: business.startTime || null,
+            endTime: business.endTime || null,
+            vehicleTypes: business.vehicleTypes || null,
+            assignedPhoneNumber: business.assignedPhoneNumber || null,
+            createdAt: business.createdAt,
+            updatedAt: business.updatedAt
+        }));
+
+        return res.status(200).json(
+            new apiResponse(200, "Businesses retrieved successfully", formattedBusinesses)
+        );
+    } catch (error) {
+        console.error("Error fetching businesses:", error);
+        throw new apiError(500, "Error retrieving businesses", error.message);
+    }
+});
+
+// Utility function to format phone number
+const formatPhoneNumber = (phoneNumber) => {
+    if (!phoneNumber) return null;
+    
+    // Remove all spaces and special characters except +
+    let cleaned = phoneNumber.replace(/[\s\-\(\)]/g, '');
+    
+    // If already starts with +91, return as is
+    if (cleaned.startsWith('+919')) {
+        return cleaned;
+    }
+    
+    // If starts with 919 (without +), add +
+    if (cleaned.startsWith('919') && cleaned.length === 13) {
+        return '+' + cleaned;
+    }
+    
+    // If starts with 91 (without +) and length is 12, add +
+    if (cleaned.startsWith('91') && cleaned.length === 12) {
+        return '+' + cleaned;
+    }
+    
+    // If it's a 10-digit number, add +91
+    if (/^[6-9]\d{9}$/.test(cleaned)) {
+        return '+91' + cleaned;
+    }
+    
+    // If it's already in correct format, return as is
+    if (cleaned.startsWith('+91') && cleaned.length === 13) {
+        return cleaned;
+    }
+    
+    // Return null if format is invalid
+    return null;
+};
+
+// Validate phone number format
+const validatePhoneNumber = (phoneNumber) => {
+    if (!phoneNumber) return { valid: false, message: 'Phone number is required' };
+    
+    const formatted = formatPhoneNumber(phoneNumber);
+    if (!formatted) {
+        return { valid: false, message: 'Invalid phone number format. Please enter a valid 10-digit number or +91XXXXXXXXXX' };
+    }
+    
+    // Check if it matches Indian mobile number pattern
+    if (!/^\+91[6-9]\d{9}$/.test(formatted)) {
+        return { valid: false, message: 'Invalid Indian mobile number. Must start with 6, 7, 8, or 9' };
+    }
+    
+    return { valid: true, formatted };
+};
+
+// Assign/Update phone number to business
+export const assignPhoneNumber = asyncHandler(async (req, res) => {
+    try {
+        const { businessId, phoneNumber } = req.body;
+
+        if (!businessId) {
+            throw new apiError(400, "Business ID is required");
+        }
+
+        // Validate phone number
+        const validation = validatePhoneNumber(phoneNumber);
+        if (!validation.valid) {
+            throw new apiError(400, validation.message);
+        }
+
+        const formattedPhone = validation.formatted;
+
+        // Check if phone number is already assigned to another business
+        const existingBusiness = await AuthUser.findOne({
+            where: {
+                assignedPhoneNumber: formattedPhone,
+                id: { [Op.ne]: businessId }
+            }
+        });
+
+        if (existingBusiness) {
+            throw new apiError(400, `This phone number is already assigned to "${existingBusiness.businessName || 'another business'}"`);
+        }
+
+        // Update the business with assigned phone number
+        const business = await AuthUser.findByPk(businessId);
+        if (!business) {
+            throw new apiError(404, "Business not found");
+        }
+
+        business.assignedPhoneNumber = formattedPhone;
+        await business.save();
+
+        return res.status(200).json(
+            new apiResponse(200, "Phone number assigned successfully", {
+                businessId: business.id,
+                businessName: business.businessName,
+                assignedPhoneNumber: business.assignedPhoneNumber
+            })
+        );
+    } catch (error) {
+        if (error instanceof apiError) {
+            throw error;
+        }
+        console.error("Error assigning phone number:", error);
+        throw new apiError(500, "Error assigning phone number", error.message);
+    }
+});
+
+// Delete/Remove assigned phone number
+export const removePhoneNumber = asyncHandler(async (req, res) => {
+    try {
+        const { businessId } = req.body;
+
+        if (!businessId) {
+            throw new apiError(400, "Business ID is required");
+        }
+
+        const business = await AuthUser.findByPk(businessId);
+        if (!business) {
+            throw new apiError(404, "Business not found");
+        }
+
+        business.assignedPhoneNumber = null;
+        await business.save();
+
+        return res.status(200).json(
+            new apiResponse(200, "Phone number removed successfully", {
+                businessId: business.id,
+                businessName: business.businessName
+            })
+        );
+    } catch (error) {
+        if (error instanceof apiError) {
+            throw error;
+        }
+        console.error("Error removing phone number:", error);
+        throw new apiError(500, "Error removing phone number", error.message);
+    }
 });
 
 
