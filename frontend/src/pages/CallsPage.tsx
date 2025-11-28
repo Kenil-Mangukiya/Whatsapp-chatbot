@@ -280,60 +280,60 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
         </div>
       ) : (
         <>
-          <div className="calls-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Time</th>
+        <div className="calls-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
                   <th>From</th>
                   <th>To</th>
-                  <th>Issue</th>
-                  <th>Duration</th>
-                  <th>Sentiment</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+                <th>Issue</th>
+                <th>Duration</th>
+                <th>Sentiment</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
                 {currentRecords.map((call, index) => {
-                  const { date, time } = formatDateTime(call.created_at);
-                  const issue = getIssue(call.dynamic_variables);
-                  const duration = formatDuration(call.duration_ms);
+                const { date, time } = formatDateTime(call.created_at);
+                const issue = getIssue(call.dynamic_variables);
+                const duration = formatDuration(call.duration_ms);
 
-                  return (
-                    <tr key={index}>
-                      <td>
-                        <div className="time-cell">
-                          <span className="date">{date}</span>
-                          <span className="time">{time}</span>
-                        </div>
-                      </td>
+                return (
+                  <tr key={index}>
+                    <td>
+                      <div className="time-cell">
+                        <span className="date">{date}</span>
+                        <span className="time">{time}</span>
+                      </div>
+                    </td>
                       <td>{call.from_number || 'Null'}</td>
-                      <td>{call.to_number || 'Null'}</td>
-                      <td>
+                    <td>{call.to_number || 'Null'}</td>
+                    <td>
                         <span className="issue-badge" title={issue}>
                           {issue}
                         </span>
-                      </td>
-                      <td>{duration}</td>
-                      <td>
-                        <span className={`sentiment-badge sentiment-${(call.call_sentiment || 'Unknown').toLowerCase()}`}>
-                          {call.call_sentiment || 'Null'}
-                        </span>
-                      </td>
-                      <td>
-                        <button 
-                          className="btn-view-details"
-                          onClick={() => handleViewDetails(call)}
-                        >
-                          View Details
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    </td>
+                    <td>{duration}</td>
+                    <td>
+                      <span className={`sentiment-badge sentiment-${(call.call_sentiment || 'Unknown').toLowerCase()}`}>
+                        {call.call_sentiment || 'Null'}
+                      </span>
+                    </td>
+                    <td>
+                      <button 
+                        className="btn-view-details"
+                        onClick={() => handleViewDetails(call)}
+                      >
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
           {/* Pagination */}
           {totalPages > 1 && (

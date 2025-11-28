@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { saveSetupData } from '../services/apis/authAPI';
 
 interface SetupPageProps {
   isActive?: boolean;
@@ -11,7 +12,6 @@ interface FormData {
   businessName: string;
   fullName: string;
   email: string;
-  phone: string;
   businessSize: string;
   serviceArea: string;
 }
@@ -20,7 +20,6 @@ interface FormErrors {
   businessName?: string;
   fullName?: string;
   email?: string;
-  phone?: string;
   serviceArea?: string;
 }
 
@@ -45,7 +44,6 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
     businessName: '',
     fullName: '',
     email: '',
-    phone: '',
     businessSize: '',
     serviceArea: ''
   });
@@ -81,7 +79,6 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
           businessName: parsed.businessName || '',
           fullName: parsed.fullName || '',
           email: parsed.email || '',
-          phone: parsed.phone || '',
           businessSize: parsed.businessSize || '',
           serviceArea: parsed.serviceArea || ''
         }));
@@ -102,7 +99,6 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
       businessName: formData.businessName,
       fullName: formData.fullName,
       email: formData.email,
-      phone: formData.phone,
       businessSize: formData.businessSize,
       serviceArea: formData.serviceArea,
       vehicleTypes: vehicleTypes,
@@ -110,7 +106,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
       endTime: endTime
     };
     localStorage.setItem('roadai_setup', JSON.stringify(saveData));
-  }, [formData.businessName, formData.fullName, formData.email, formData.phone, formData.businessSize, formData.serviceArea, vehicleTypes, startTime, endTime]);
+  }, [formData.businessName, formData.fullName, formData.email, formData.businessSize, formData.serviceArea, vehicleTypes, startTime, endTime]);
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -141,17 +137,12 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
       newErrors.fullName = 'Full name is required';
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email address is required';
-    } else {
+    // Email is optional, but if provided, must be valid
+    if (formData.email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email)) {
         newErrors.email = 'Please enter a valid email address';
       }
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
     }
 
     if (!formData.serviceArea.trim()) {
@@ -174,22 +165,35 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
     setIsSubmitting(true);
 
     try {
-      // Here you would typically send data to your backend API
-      // const response = await api.post('/api/setup/business-details', { formData, vehicleTypes, startTime, endTime });
+      // Prepare data to send to backend
+      const setupData = {
+        businessName: formData.businessName,
+        fullName: formData.fullName,
+        email: formData.email || undefined,
+        businessSize: formData.businessSize || undefined,
+        serviceArea: formData.serviceArea,
+        startTime: startTime || undefined,
+        endTime: endTime || undefined,
+        vehicleTypes: vehicleTypes.length > 0 ? vehicleTypes : undefined
+      };
+
+      // Send data to backend API
+      await saveSetupData(setupData);
       
-      console.log('Form submitted:', { formData, vehicleTypes, startTime, endTime });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Form submitted successfully:', setupData);
       
       toast.success('Business details and pricing saved successfully!');
       
-      // Navigate to next step or dashboard
-      // navigate('/dashboard');
+      // Clear localStorage after successful save
+      localStorage.removeItem('roadai_setup');
+      
+      // Navigate to dashboard
+      navigate('/dashboard');
       
     } catch (error: any) {
       console.error('Error submitting form:', error);
-      toast.error(error.message || 'Failed to save. Please try again.');
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to save. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -528,7 +532,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
 
                 <div>
                   <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Email Address <span className="text-red-500">*</span>
+                    Email Address
                   </label>
                   <input
                     type="email"
@@ -552,51 +556,24 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
                 </div>
               </div>
 
-              {/* Phone and Business Size */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Phone Number <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    placeholder="+91 98765 43210"
-                    className={`w-full px-4 py-3.5 border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all bg-white ${
-                      errors.phone ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                  />
-                  {errors.phone && (
-                    <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      {errors.phone}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="businessSize" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Business Size
-                  </label>
-                  <select
-                    id="businessSize"
-                    name="businessSize"
-                    value={formData.businessSize}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3.5 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all hover:border-gray-400 cursor-pointer"
-                  >
-                    <option value="">Select team size</option>
-                    <option value="1-5">1-5 employees</option>
-                    <option value="6-20">6-20 employees</option>
-                    <option value="21-50">21-50 employees</option>
-                    <option value="51+">51+ employees</option>
-                  </select>
-                </div>
+              {/* Business Size */}
+              <div className="mb-6">
+                <label htmlFor="businessSize" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Business Size
+                </label>
+                <select
+                  id="businessSize"
+                  name="businessSize"
+                  value={formData.businessSize}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3.5 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all hover:border-gray-400 cursor-pointer"
+                >
+                  <option value="">Select team size</option>
+                  <option value="1-5">1-5 employees</option>
+                  <option value="6-20">6-20 employees</option>
+                  <option value="21-50">21-50 employees</option>
+                  <option value="51+">51+ employees</option>
+                </select>
               </div>
 
               {/* Service Area */}
@@ -626,6 +603,39 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
                 <p className="mt-2 text-sm text-gray-500">
                   City or region where you primarily operate
                 </p>
+              </div>
+
+              {/* Business Hours Section */}
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Business Hours</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-2">
+                      Start Time
+                    </label>
+                    <input
+                      type="time"
+                      id="startTime"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      placeholder="Opening Time"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-2">
+                      End Time
+                    </label>
+                    <input
+                      type="time"
+                      id="endTime"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      placeholder="Closing Time"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all bg-white"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -927,39 +937,6 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
                     <p className="text-sm text-gray-400">Click "Add New Vehicle" to get started</p>
                   </div>
                 )}
-
-                {/* Business Hours Section - Always Visible */}
-                <div className="bg-gray-50 rounded-xl border border-gray-200 shadow-sm p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Business Hours</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-2">
-                        Start Time
-                      </label>
-                      <input
-                        type="time"
-                        id="startTime"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        placeholder="Opening Time"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-2">
-                        End Time
-                      </label>
-                      <input
-                        type="time"
-                        id="endTime"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        placeholder="Closing Time"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all bg-white"
-                      />
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
 

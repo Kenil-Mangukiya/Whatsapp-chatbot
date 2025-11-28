@@ -93,10 +93,32 @@ export const sendOTP = async (phoneNumber: string) => {
   }
 };
 
+export interface SetupData {
+  businessName: string;
+  fullName: string;
+  email?: string;
+  businessSize?: string;
+  serviceArea: string;
+  startTime?: string;
+  endTime?: string;
+  vehicleTypes?: any[];
+}
+
+export const saveSetupData = async (data: SetupData) => {
+  try {
+    const response: any = await api.post('/user/setup', data);
+    console.log("Save setup data response:", response);
+    return response;
+  } catch (error) {
+    throw getErrorDetails(error);
+  }
+};
+
 export default {
   registerUser,
   authGoogleUser,
   loginUser,
   sendOTP,
+  saveSetupData,
 };
 

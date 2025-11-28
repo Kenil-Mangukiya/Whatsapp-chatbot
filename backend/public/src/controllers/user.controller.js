@@ -121,8 +121,7 @@ export const loginUser = asyncHandler(async (req, res) => {
         user = await AuthUser.create({
             phoneNumber: phoneNumber,
             username: `user_${phoneNumber}`, // Default username
-            email: `${phoneNumber}@temp.com`, // Temporary email (can be updated later)
-            password: null // No password for OTP-based auth
+            email: null // Will be set during setup
         });
         
         console.log("New user created:", user.id);
@@ -152,6 +151,102 @@ export const loginUser = asyncHandler(async (req, res) => {
                 username: user.username
             },
             message: user ? "Welcome back!" : "Account created successfully!"
+        })
+    );
+});
+
+// Save setup data (business details and pricing)
+export const saveSetupData = asyncHandler(async (req, res) => {
+    const userId = req.userId; // From authenticate middleware
+    
+    const {
+        businessName,
+        fullName,
+        email,
+        businessSize,
+        serviceArea,
+        startTime,
+        endTime,
+        vehicleTypes
+    } = req.body;
+    
+    console.log("Save setup data request for user:", userId);
+    
+    // Validate required fields
+    if (!businessName || !businessName.trim()) {
+        throw new apiError(400, "Business name is required");
+    }
+    
+    if (!fullName || !fullName.trim()) {
+        throw new apiError(400, "Full name is required");
+    }
+    
+    if (!serviceArea || !serviceArea.trim()) {
+        throw new apiError(400, "Service area is required");
+    }
+    
+    // Validate email format if provided
+    if (email && email.trim()) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            throw new apiError(400, "Please provide a valid email address");
+        }
+    }
+    
+    // Find user
+    const user = await AuthUser.findByPk(userId);
+    
+    if (!user) {
+        throw new apiError(404, "User not found");
+    }
+    
+    // Prepare update data
+    const updateData = {
+        businessName: businessName.trim(),
+        fullName: fullName.trim(),
+        serviceArea: serviceArea.trim()
+    };
+    
+    // Add optional fields if provided
+    if (email && email.trim()) {
+        updateData.email = email.trim();
+    }
+    
+    if (businessSize && businessSize.trim()) {
+        updateData.businessSize = businessSize.trim();
+    }
+    
+    if (startTime) {
+        updateData.startTime = startTime;
+    }
+    
+    if (endTime) {
+        updateData.endTime = endTime;
+    }
+    
+    if (vehicleTypes && Array.isArray(vehicleTypes)) {
+        updateData.vehicleTypes = vehicleTypes;
+    }
+    
+    // Update user with setup data
+    await user.update(updateData);
+    
+    console.log("Setup data saved successfully for user:", userId);
+    
+    // Return success response
+    return res.status(200).json(
+        new apiResponse(200, "Setup data saved successfully", {
+            user: {
+                id: user.id,
+                businessName: user.businessName,
+                fullName: user.fullName,
+                email: user.email,
+                businessSize: user.businessSize,
+                serviceArea: user.serviceArea,
+                startTime: user.startTime,
+                endTime: user.endTime,
+                vehicleTypes: user.vehicleTypes
+            }
         })
     );
 });

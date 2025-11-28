@@ -21,31 +21,59 @@ module.exports = (sequelize, DataTypes) => {
     },
     username: {
       type: DataTypes.STRING(255),
-      allowNull: false,
+      allowNull: true,
       unique: false,
-      comment: 'Username for authentication'
+      comment: 'Username for authentication (optional)'
     },
     email: {
       type: DataTypes.STRING(255),
-      allowNull: false,
-      unique: true,
-      comment: 'Email address'
-    },
-    password: {
-      type: DataTypes.STRING(255),
       allowNull: true,
-      comment: 'Hashed password (null for OAuth users)'
-    },
-    avatar: {
-      type: DataTypes.STRING(500),
-      allowNull: true,
-      comment: 'Avatar URL from Cloudinary'
+      unique: false,
+      comment: 'Email address (optional)'
     },
     phoneNumber: {
       type: DataTypes.STRING(20),
       allowNull: true,
       unique: true,
       comment: 'Phone number for OTP authentication'
+    },
+    // Business Details
+    businessName: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Business name'
+    },
+    fullName: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Full name of the business owner'
+    },
+    businessSize: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      comment: 'Business size (e.g., 1-5, 6-20, etc.)'
+    },
+    serviceArea: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Primary service area'
+    },
+    // Business Hours
+    startTime: {
+      type: DataTypes.TIME,
+      allowNull: true,
+      comment: 'Business start time'
+    },
+    endTime: {
+      type: DataTypes.TIME,
+      allowNull: true,
+      comment: 'Business end time'
+    },
+    // Pricing Setup (stored as JSON)
+    vehicleTypes: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      comment: 'Vehicle types with services and pricing (JSON array)'
     }
   }, {
     sequelize,
@@ -54,16 +82,12 @@ module.exports = (sequelize, DataTypes) => {
     timestamps: true,
     indexes: [
       {
-        fields: ['email'],
-        unique: true
-      },
-      {
-        fields: ['username'],
-        unique: false
-      },
-      {
         fields: ['phoneNumber'],
         unique: true
+      },
+      {
+        fields: ['email'],
+        unique: false
       }
     ]
   });
