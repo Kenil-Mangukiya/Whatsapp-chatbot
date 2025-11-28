@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Phone, Building2, Search, Filter, UserPlus, Clock, Car, DollarSign, Trash2, Edit2 } from 'lucide-react';
+import { Eye, Phone, Building2, Search, Filter, UserPlus, Clock, Car, DollarSign, Trash2, Edit2, AlertTriangle } from 'lucide-react';
 import { getAllBusinesses, assignPhoneNumber, removePhoneNumber, BusinessData } from '../services/apis/authAPI';
 import toast from 'react-hot-toast';
 
@@ -12,6 +12,7 @@ const AdminPage: React.FC = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [assignPhoneModal, setAssignPhoneModal] = useState<BusinessData | null>(null);
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<BusinessData | null>(null);
 
   // Fetch businesses from API
   useEffect(() => {
@@ -152,27 +153,31 @@ const AdminPage: React.FC = () => {
     setNewPhoneNumber(business.assignedPhoneNumber || '');
   };
 
-  // Handle delete phone number
-  const handleDeletePhoneNumber = async (business: BusinessData) => {
-    if (!window.confirm(`Are you sure you want to remove the assigned phone number from "${business.businessName}"?`)) {
-      return;
-    }
+  // Handle delete phone number - show confirmation modal
+  const handleDeletePhoneNumber = (business: BusinessData) => {
+    setDeleteConfirmModal(business);
+  };
+
+  // Confirm delete phone number
+  const confirmDeletePhoneNumber = async () => {
+    if (!deleteConfirmModal) return;
 
     try {
       await removePhoneNumber({
-        businessId: business.id
+        businessId: deleteConfirmModal.id
       });
 
       // Update local state
       setBusinesses(prev =>
         prev.map(b =>
-          b.id === business.id
+          b.id === deleteConfirmModal.id
             ? { ...b, assignedPhoneNumber: null }
             : b
         )
       );
 
       toast.success('Phone number removed successfully');
+      setDeleteConfirmModal(null);
     } catch (error: any) {
       console.error('Error removing phone number:', error);
       toast.error(error.message || 'Failed to remove phone number');
@@ -585,6 +590,41 @@ const AdminPage: React.FC = () => {
               >
                 <Phone size={16} />
                 Assign Number
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmModal && (
+        <div className="modal-overlay" onClick={() => setDeleteConfirmModal(null)}>
+          <div className="delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-confirm-icon">
+              <Trash2 size={48} />
+            </div>
+            <h2>Delete Assigned Phone Number</h2>
+            <p className="delete-confirm-message">
+              Are you sure you want to remove the assigned phone number from
+              <strong> "{deleteConfirmModal.businessName}"</strong>?
+            </p>
+            <p className="delete-confirm-warning">
+              <AlertTriangle size={16} />
+              This action cannot be undone.
+            </p>
+            <div className="delete-confirm-actions">
+              <button
+                className="delete-confirm-btn cancel"
+                onClick={() => setDeleteConfirmModal(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="delete-confirm-btn delete"
+                onClick={confirmDeletePhoneNumber}
+              >
+                <Trash2 size={18} />
+                Delete
               </button>
             </div>
           </div>
