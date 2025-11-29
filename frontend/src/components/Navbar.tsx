@@ -1,15 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import api from '../config/api';
-import { Building2, User, LogOut } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Building2 } from 'lucide-react';
 
 const Navbar = () => {
-  const navigate = useNavigate();
   const [businessName, setBusinessName] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -42,45 +37,11 @@ const Navbar = () => {
   // Generate business logo URL or use initials
   const getBusinessLogo = (name: string): string => {
     if (!name) {
-      return `https://ui-avatars.com/api/?name=Business&background=4F46E5&color=fff&size=128&bold=true&font-size=0.5`;
+      return `https://ui-avatars.com/api/?name=Business&background=EE3227&color=fff&size=128&bold=true&font-size=0.5`;  
     }
     const encodedName = encodeURIComponent(name);
-    return `https://ui-avatars.com/api/?name=${encodedName}&background=4F46E5&color=fff&size=128&bold=true&font-size=0.5`;
+    return `https://ui-avatars.com/api/?name=${encodedName}&background=EE3227&color=fff&size=128&bold=true&font-size=0.5`;
   };
-
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await api.post('/user/logout');
-      toast.success('Logged out successfully');
-      // Clear any local storage if needed
-      localStorage.clear();
-      // Navigate to login page
-      navigate('/login', { replace: true });
-    } catch (error: any) {
-      console.error('Logout error:', error);
-      // Even if API call fails, clear local storage and redirect
-      localStorage.clear();
-      navigate('/login', { replace: true });
-    }
-  };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
-
-    if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDropdown]);
 
   return (
     <nav className="navbar">
@@ -95,12 +56,10 @@ const Navbar = () => {
         </div>
         <div className="nav-actions">
           {!loading && (
-            <div className="business-logo-dropdown" ref={dropdownRef}>
-              <button 
+            <div className="business-logo-display">
+              <div 
                 className="business-logo-btn"
                 title={businessName || 'Business'}
-                onClick={() => setShowDropdown(!showDropdown)}
-                onMouseEnter={() => setShowDropdown(true)}
               >
                 {businessName ? (
                   <div className="business-logo-container">
@@ -129,32 +88,7 @@ const Navbar = () => {
                     </div>
                   </div>
                 )}
-              </button>
-              
-              {showDropdown && (
-                <div className="business-dropdown-menu">
-                  <button
-                    className="dropdown-item"
-                    onClick={() => {
-                      setShowDropdown(false);
-                      navigate('/update-setup');
-                    }}
-                  >
-                    <User size={18} />
-                    <span>View Business Profile</span>
-                  </button>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => {
-                      setShowDropdown(false);
-                      handleLogout();
-                    }}
-                  >
-                    <LogOut size={18} />
-                    <span>Logout</span>
-                  </button>
-                </div>
-              )}
+              </div>
             </div>
           )}
         </div>

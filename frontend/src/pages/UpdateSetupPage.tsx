@@ -4,6 +4,8 @@ import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { saveSetupData } from '../services/apis/authAPI';
 import api from '../config/api';
+import Navbar from '../components/Navbar';
+import Sidebar from '../components/Sidebar';
 
 interface SetupPageProps {
   isActive?: boolean;
@@ -486,32 +488,13 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 ${isActive ? 'active' : ''}`}>
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-gray-200 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="bg-indigo-600 p-2 rounded-xl">
-                <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="20" cy="20" r="18" fill="#FFFFFF" opacity="0.2"/>
-                  <path d="M20 10L26 16L20 22L14 16L20 10Z" fill="#FFFFFF"/>
-                  <circle cx="20" cy="20" r="4" fill="#FFFFFF"/>
-                </svg>
-              </div>
-              <span className="text-xl font-bold text-gray-900">RoadAI Assistant</span>
-            </div>
-            <div className="flex items-center gap-6">
-              <span className="text-sm text-gray-600">
-                Need help? <a href="#" className="text-indigo-600 font-semibold hover:text-indigo-700 transition-colors">Contact Support</a>
-              </span>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="App">
+      <Navbar />
+      <div className="dashboard-container">
+        <Sidebar activePage="update-setup" />
+        <main className="main-content">
+          <div className={`page-content ${isActive ? 'active' : ''}`}>
+            <div className="pt-4 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-10 text-center">
@@ -1095,6 +1078,9 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
             </div>
           </form>
         </div>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

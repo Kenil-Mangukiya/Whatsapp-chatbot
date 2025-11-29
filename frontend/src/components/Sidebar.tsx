@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Shield } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Shield, User, LogOut } from 'lucide-react';
 import api from '../config/api';
+import toast from 'react-hot-toast';
 
 interface SidebarProps {
   activePage?: string;
@@ -9,6 +10,7 @@ interface SidebarProps {
 
 const Sidebar = ({ activePage }: SidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   
@@ -30,6 +32,20 @@ const Sidebar = ({ activePage }: SidebarProps) => {
 
     checkAdmin();
   }, []);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await api.post('/user/logout');
+      toast.success('Logged out successfully');
+      localStorage.clear();
+      navigate('/login', { replace: true });
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      localStorage.clear();
+      navigate('/login', { replace: true });
+    }
+  };
   
   // Get active page from pathname if not provided
   const currentActivePage = activePage || location.pathname.split('/').pop() || 'dashboard';
@@ -78,6 +94,11 @@ const Sidebar = ({ activePage }: SidebarProps) => {
           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
         </svg>
       )
+    },
+    {
+      id: 'update-setup',
+      label: 'View Business Profile',
+      icon: <User size={20} />
     },
     // {
     //   id: 'analytics',
@@ -175,6 +196,17 @@ const Sidebar = ({ activePage }: SidebarProps) => {
           </Link>
         </div>
       )}
+      
+      {/* Logout Button */}
+      <div className="sidebar-logout-section">
+        <button
+          onClick={handleLogout}
+          className="logout-menu-item"
+        >
+          <LogOut size={20} />
+          <span>Logout</span>
+        </button>
+      </div>
       
       <div className="sidebar-footer">
         <div className="trial-card">

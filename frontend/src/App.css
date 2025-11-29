@@ -342,10 +342,43 @@ body {
     color: white;
 }
 
+.sidebar-logout-section {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    margin-top: auto;
+}
+
+.logout-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    background: transparent;
+    border: none;
+    font-size: 0.938rem;
+    font-weight: 500;
+    font-family: inherit;
+}
+
+.logout-menu-item:hover {
+    background: rgba(238, 50, 39, 0.1);
+    color: var(--primary-color);
+}
+
+.logout-menu-item svg {
+    flex-shrink: 0;
+}
+
 .sidebar-footer {
     padding: 1rem;
-    border-top: 1px solid var(--border-color);
-    margin-top: auto;
+    margin-top: 0;
     margin-bottom: 0;
 }
 
@@ -3403,6 +3436,44 @@ input:checked + .toggle-slider:before {
     margin-bottom: 2rem;
     flex-wrap: wrap;
     gap: 1.5rem;
+    position: relative;
+}
+
+.admin-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.admin-logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(238, 50, 39, 0.2);
+    margin-top: 0.5rem;
+}
+
+.admin-logout-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(238, 50, 39, 0.3);
+}
+
+.admin-logout-btn:active {
+    transform: translateY(0);
+}
+
+.admin-logout-btn svg {
+    flex-shrink: 0;
 }
 
 .admin-title {

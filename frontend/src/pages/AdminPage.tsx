@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Phone, Building2, Search, Filter, UserPlus, Clock, Car, DollarSign, Trash2, Edit2, AlertTriangle, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Eye, Phone, Building2, Search, Filter, UserPlus, Clock, Car, DollarSign, Trash2, Edit2, AlertTriangle, Shield, LogOut } from 'lucide-react';
 import { getAllBusinesses, assignPhoneNumber, removePhoneNumber, changeUserRole, BusinessData } from '../services/apis/authAPI';
 import api from '../config/api';
 import toast from 'react-hot-toast';
 
 const AdminPage: React.FC = () => {
+  const navigate = useNavigate();
   const [businesses, setBusinesses] = useState<BusinessData[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentAdminId, setCurrentAdminId] = useState<number | null>(null);
@@ -257,6 +259,20 @@ const AdminPage: React.FC = () => {
     return `₹${num.toLocaleString('en-IN')}`;
   };
 
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await api.post('/user/logout');
+      toast.success('Logged out successfully');
+      localStorage.clear();
+      navigate('/login', { replace: true });
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      localStorage.clear();
+      navigate('/login', { replace: true });
+    }
+  };
+
   return (
     <div className="page-content active admin-page-wrapper">
       {/* Header */}
@@ -264,6 +280,16 @@ const AdminPage: React.FC = () => {
         <div>
           <h1 className="admin-title">Business Administration</h1>
           <p className="admin-subtitle">Manage and monitor all registered businesses</p>
+        </div>
+        <div className="admin-header-actions">
+          <button
+            onClick={handleLogout}
+            className="admin-logout-btn"
+            title="Logout"
+          >
+            <LogOut size={18} />
+            <span>Logout</span>
+          </button>
         </div>
         <div className="admin-stats">
           <div className="admin-stat-card">
