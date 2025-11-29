@@ -7,6 +7,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { sendWhatsappOTP as sendWhatsappOTPService } from "../services/whatsapp.service.js";
 import { storeOTP, verifyOTP } from "../utils/otpStore.js";
 import { Op } from "sequelize";
+import { AgentSetup } from "../db/index.js";
 
 // Generate JWT token with user data
 const generateToken = (userId, phoneNumber, rememberMe = false) => {
@@ -236,11 +237,38 @@ export const getAllBusinesses = asyncHandler(async (req, res) => {
                 'createdAt',
                 'updatedAt'
             ],
+            include: [{
+                model: AgentSetup,
+                as: 'agentSetup',
+                required: false, // LEFT JOIN - include users even without agent setup
+                attributes: [
+                    'id',
+                    'agentName',
+                    'agentVoice',
+                    'agentLanguage',
+                    'welcomeMessage',
+                    'agentFlow',
+                    'customerDetails',
+                    'transferCall',
+                    'endingMessage',
+                    'createdAt',
+                    'updatedAt'
+                ]
+            }],
             order: [['createdAt', 'DESC']]
         });
         
+        // Format the response to include agent setup data
+        const formattedBusinesses = businesses.map(business => {
+            const businessData = business.toJSON();
+            return {
+                ...businessData,
+                agentSetup: businessData.agentSetup || null
+            };
+        });
+        
         return res.status(200).json(
-            new apiResponse(200, "Businesses fetched successfully", businesses)
+            new apiResponse(200, "Businesses fetched successfully", formattedBusinesses)
         );
     } catch (error) {
         console.error("Error fetching businesses:", error);
@@ -426,6 +454,124 @@ export const changeUserRole = asyncHandler(async (req, res) => {
                 phoneNumber: business.phoneNumber,
                 role: business.role
             }
+        })
+    );
+});
+
+// Save Agent Setup
+export const saveAgentSetup = asyncHandler(async (req, res) => {
+    const userId = req.userId;
+    
+    if (!userId) {
+        throw new apiError(401, "Authentication required");
+    }
+    
+    const {
+        agentName,
+        agentVoice,
+        agentLanguage,
+        welcomeMessage,
+        agentFlow,
+        customerDetails,
+        transferCall,
+        endingMessage
+    } = req.body;
+    
+    // Find or create agent setup for this user
+    let agentSetup = await AgentSetup.findOne({
+        where: { auth_user_id: userId }
+    });
+    
+    if (agentSetup) {
+        // Update existing agent setup
+        agentSetup.agentName = agentName || null;
+        agentSetup.agentVoice = agentVoice || null;
+        agentSetup.agentLanguage = agentLanguage || null;
+        agentSetup.welcomeMessage = welcomeMessage || null;
+        agentSetup.agentFlow = agentFlow || null;
+        agentSetup.customerDetails = customerDetails || null;
+        agentSetup.transferCall = transferCall || null;
+        agentSetup.endingMessage = endingMessage || null;
+        await agentSetup.save();
+    } else {
+        // Create new agent setup
+        agentSetup = await AgentSetup.create({
+            auth_user_id: userId,
+            agentName: agentName || null,
+            agentVoice: agentVoice || null,
+            agentLanguage: agentLanguage || null,
+            welcomeMessage: welcomeMessage || null,
+            agentFlow: agentFlow || null,
+            customerDetails: customerDetails || null,
+            transferCall: transferCall || null,
+            endingMessage: endingMessage || null
+        });
+    }
+    
+    return res.status(200).json(
+        new apiResponse(200, "Agent setup saved successfully", {
+            agentSetup: {
+                id: agentSetup.id,
+                agentName: agentSetup.agentName,
+                agentVoice: agentSetup.agentVoice,
+                agentLanguage: agentSetup.agentLanguage,
+                welcomeMessage: agentSetup.welcomeMessage,
+                agentFlow: agentSetup.agentFlow,
+                customerDetails: agentSetup.customerDetails,
+                transferCall: agentSetup.transferCall,
+                endingMessage: agentSetup.endingMessage
+            }
+        })
+    );
+});
+
+// Admin Login As User (Admin only)
+export const adminLoginAsUser = asyncHandler(async (req, res) => {
+    const currentAdminId = req.userId;
+    
+    if (!currentAdminId) {
+        throw new apiError(401, "Authentication required");
+    }
+    
+    // Verify current user is admin
+    const admin = await AuthUser.findByPk(currentAdminId);
+    if (!admin || admin.role !== 'admin') {
+        throw new apiError(403, "Access denied. Admin privileges required.");
+    }
+    
+    const { userId } = req.body;
+    
+    if (!userId) {
+        throw new apiError(400, "User ID is required");
+    }
+    
+    // Find the target user
+    const targetUser = await AuthUser.findByPk(userId);
+    if (!targetUser) {
+        throw new apiError(404, "User not found");
+    }
+    
+    // Generate token for the target user
+    const token = generateToken(targetUser.id, targetUser.phoneNumber, false);
+    
+    // Set cookie for the target user
+    res.cookie('authToken', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+    
+    return res.status(200).json(
+        new apiResponse(200, "Logged in as user successfully", {
+            user: {
+                id: targetUser.id,
+                phoneNumber: targetUser.phoneNumber,
+                businessName: targetUser.businessName,
+                fullName: targetUser.fullName,
+                role: targetUser.role
+            },
+            token: token
         })
     );
 });

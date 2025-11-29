@@ -555,3 +555,122 @@ const CallsPage: React.FC<CallsPageProps> = ({ isActive }) => {
 };
 
 export default CallsPage;
+
+                  Call Information
+                </h3>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <span className="detail-label">Duration:</span>
+                    <span className="detail-value">{formatDuration(selectedCall.duration_ms)}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Disconnection Reason:</span>
+                    <span className="detail-value">{selectedCall.disconnection_reason || 'Null'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {selectedCall.dynamic_variables && Object.keys(selectedCall.dynamic_variables).length > 0 && (
+                <div className="detail-section">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }}>
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    User Information
+                  </h3>
+                  <div className="detail-grid">
+                    {Object.entries(selectedCall.dynamic_variables).map(([key, value]) => (
+                      <div key={key} className="detail-item">
+                        <span className="detail-label">{key}:</span>
+                        <span className="detail-value">{String(value) || 'Null'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedCall.transcript && (
+                <div className="detail-section">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }}>
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                      <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                    Transcript
+                  </h3>
+                  <div className="chat-transcript">
+                    {parseTranscript(selectedCall.transcript).map((message, index) => (
+                      <div key={index} className={`chat-message ${message.role === 'agent' ? 'agent-message' : 'user-message'}`}>
+                        <div className="message-bubble">
+                          <div className="message-role">{message.role === 'agent' ? 'Agent' : 'User'}</div>
+                          <div className="message-content">{message.content}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedCall.call_summary && (
+                <div className="detail-section">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }}>
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                      <line x1="9" y1="12" x2="15" y2="12"/>
+                      <line x1="9" y1="16" x2="15" y2="16"/>
+                    </svg>
+                    Call Summary
+                  </h3>
+                  <div className="call-summary-content">
+                    <p>{selectedCall.call_summary}</p>
+                  </div>
+                </div>
+              )}
+
+              {selectedCall.recording_url && (
+                <div className="detail-section">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }}>
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                    </svg>
+                    Recording
+                  </h3>
+                  <audio controls src={selectedCall.recording_url} style={{ width: '100%', marginBottom: '1rem' }}>
+                    Your browser does not support the audio element.
+                  </audio>
+                  <button 
+                    className="btn-download-recording"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = selectedCall.recording_url!;
+                      link.download = `recording-${selectedCall.created_at ? new Date(selectedCall.created_at).toISOString() : Date.now()}.wav`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      toast.success('Recording download started');
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download Recording
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CallsPage;

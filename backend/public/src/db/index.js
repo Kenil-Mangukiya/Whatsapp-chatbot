@@ -31,6 +31,7 @@ const sequelize = new Sequelize(
 const UserModel = require("./models/user.cjs");
 const AuthUserModel = require("./models/auth.user.model.cjs");
 const CallHistoryModel = require("./models/call.history.model.cjs");
+const AgentSetupModel = require("./models/agent.setup.model.cjs");
 const ConversationModel = ConversationModelDefault;
 
 // Initialize models
@@ -39,13 +40,15 @@ const User = UserModel(sequelize, DataTypes);
 const AuthUser = AuthUserModel(sequelize, DataTypes);
 const Conversation = ConversationModel(sequelize, Sequelize);
 const CallHistory = CallHistoryModel(sequelize, DataTypes);
+const AgentSetup = AgentSetupModel(sequelize, DataTypes);
 
 // Define associations
 const models = {
     User,
     AuthUser,
     Conversation,
-    CallHistory
+    CallHistory,
+    AgentSetup
 };
 
 // Set up associations if models have associate method
@@ -56,12 +59,14 @@ Object.keys(models).forEach(modelName => {
 });
 
 // Export sequelize instance and models
-export { sequelize, models, User, AuthUser, Conversation, CallHistory };
+export { sequelize, models, User, AuthUser, Conversation, CallHistory, AgentSetup };
 export default {
     sequelize,
     User,
     AuthUser,
     Conversation,
-    CallHistory
+    CallHistory,
+    AgentSetup
 };
+
 

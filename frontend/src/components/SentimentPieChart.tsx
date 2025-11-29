@@ -207,3 +207,10 @@ const SentimentPieChart: React.FC<SentimentPieChartProps> = ({ sentimentCounts, 
 
 export default SentimentPieChart;
 
+
+    </div>
+  );
+};
+
+export default SentimentPieChart;
+

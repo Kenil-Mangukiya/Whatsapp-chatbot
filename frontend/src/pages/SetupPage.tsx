@@ -211,10 +211,10 @@ const SetupPage: React.FC<SetupPageProps> = ({ isActive }) => {
       // Clear localStorage after successful save
       localStorage.removeItem('roadai_setup');
       
-      // Wait a moment for the backend to update, then navigate
+      // Wait a moment for the backend to update, then navigate to agent setup
       setTimeout(() => {
-        // Force navigation to dashboard
-        window.location.href = '/dashboard';
+        // Navigate to agent setup page (optional step)
+        window.location.href = '/agent-setup';
       }, 500);
       
     } catch (error: any) {

@@ -139,6 +139,7 @@ export interface BusinessData {
   updatedAt: string;
   assignedPhoneNumber?: string | null;
   role?: 'user' | 'admin';
+  agentSetup?: AgentSetupData | null;
 }
 
 export const getAllBusinesses = async (): Promise<{ data: BusinessData[] }> => {
@@ -189,6 +190,44 @@ export const changeUserRole = async (data: ChangeRoleData) => {
   try {
     const response: any = await api.post('/user/change-role', data);
     console.log("Change user role response:", response);
+    return response;
+  } catch (error) {
+    throw getErrorDetails(error);
+  }
+};
+
+export interface AgentSetupData {
+  id?: number;
+  agentName?: string | null;
+  agentVoice?: 'male' | 'female' | null;
+  agentLanguage?: string | null;
+  welcomeMessage?: string | null;
+  agentFlow?: string | null;
+  customerDetails?: string | null;
+  transferCall?: string | null;
+  endingMessage?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const saveAgentSetup = async (data: AgentSetupData) => {
+  try {
+    const response: any = await api.post('/user/agent-setup', data);
+    console.log("Save agent setup response:", response);
+    return response;
+  } catch (error) {
+    throw getErrorDetails(error);
+  }
+};
+
+export interface AdminLoginAsUserData {
+  userId: number;
+}
+
+export const adminLoginAsUser = async (data: AdminLoginAsUserData) => {
+  try {
+    const response: any = await api.post('/user/admin/login-as-user', data);
+    console.log("Admin login as user response:", response);
     return response;
   } catch (error) {
     throw getErrorDetails(error);

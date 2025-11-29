@@ -11,6 +11,10 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // Define associations here if needed
+      AuthUser.hasOne(models.AgentSetup, {
+        foreignKey: 'auth_user_id',
+        as: 'agentSetup'
+      });
     }
   }
   AuthUser.init({
@@ -98,6 +102,17 @@ module.exports = (sequelize, DataTypes) => {
       {
         fields: ['phoneNumber'],
         unique: true
+      },
+      {
+        fields: ['email'],
+        unique: false
+      }
+    ]
+  });
+  return AuthUser;
+};
+
+
       },
       {
         fields: ['email'],

@@ -142,3 +142,8 @@ module.exports = (sequelize, DataTypes) => {
   return CallHistory;
 };
 
+
+  });
+  return CallHistory;
+};
+

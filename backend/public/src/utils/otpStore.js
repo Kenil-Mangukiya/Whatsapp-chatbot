@@ -64,3 +64,23 @@ export const getOTP = (phoneNumber) => {
     return otpStore.get(phoneNumber);
 };
 
+
+    // Check if OTP matches
+    if (stored.otp !== otp) {
+        return { 
+            valid: false, 
+            errorType: 'invalid',
+            message: 'Invalid OTP. Please check and try again.' 
+        };
+    }
+    
+    // OTP is valid, remove it from store
+    otpStore.delete(phoneNumber);
+    return { valid: true, message: 'OTP verified' };
+};
+
+// Get OTP (for testing/debugging)
+export const getOTP = (phoneNumber) => {
+    return otpStore.get(phoneNumber);
+};
+

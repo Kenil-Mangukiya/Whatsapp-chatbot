@@ -259,12 +259,13 @@ body {
 .sidebar {
     background: white;
     border-right: 1px solid var(--border-color);
-    padding: 2rem 0 3rem 0;
+    padding: 2rem 0 0 0;
     position: sticky;
     top: 70px;
     height: calc(100vh - 70px);
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 }
 
 .sidebar-menu {
@@ -345,7 +346,6 @@ body {
 .sidebar-logout-section {
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
     margin-top: auto;
 }
 
@@ -377,19 +377,21 @@ body {
 }
 
 .sidebar-footer {
-    padding: 1rem;
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
     margin-top: 0;
     margin-bottom: 0;
+    border-top: 1px solid var(--border-color);
 }
 
 .trial-card {
-    padding: 0.75rem 1rem;
-    background: linear-gradient(135deg, rgba(238, 50, 39, 0.05) 0%, rgba(255, 106, 90, 0.05) 100%);
-    border: 1px solid rgba(238, 50, 39, 0.2);
+    padding: 0.875rem 1rem;
+    background: var(--primary-color);
+    border: none;
     border-radius: 0.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 2px 8px rgba(238, 50, 39, 0.2);
 }
 
 .trial-card h4 {
@@ -431,7 +433,7 @@ body {
 .trial-text {
     font-size: 0.875rem !important;
     font-weight: 600 !important;
-    color: var(--primary-color) !important;
+    color: white !important;
     display: block;
     text-align: center;
     padding: 0;
@@ -3427,6 +3429,9 @@ input:checked + .toggle-slider:before {
     padding: 2rem;
     max-width: 1600px;
     margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 .admin-header {
@@ -3590,7 +3595,11 @@ input:checked + .toggle-slider:before {
     border-radius: 1rem;
     border: 1px solid var(--border-color);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: calc(100vh - 350px);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .admin-table {
@@ -3600,6 +3609,9 @@ input:checked + .toggle-slider:before {
 
 .admin-table thead {
     background: var(--bg-secondary);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .admin-table th {
@@ -3611,6 +3623,7 @@ input:checked + .toggle-slider:before {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-bottom: 2px solid var(--border-color);
+    background: var(--bg-secondary);
 }
 
 .admin-table tbody tr {
@@ -4733,4 +4746,119 @@ input:checked + .toggle-slider:before {
     .not-found-title {
         font-size: 1.75rem;
     }
+}
+
+/* Agent Setup Styles */
+.agent-setup-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.agent-setup-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.agent-setup-btn.complete {
+    background-color: #10b981;
+    color: white;
+}
+
+.agent-setup-btn.incomplete {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.agent-setup-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.agent-setup-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.agent-setup-badge.not-started {
+    background-color: #ef4444;
+    color: white;
+}
+
+.actions-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.login-as-user-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.login-as-user-btn:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+}
+
+.agent-setup-modal {
+    max-width: 800px;
+}
+
+.agent-setup-details .detail-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.not-filled {
+    color: #ef4444;
+    font-style: italic;
+}
+
+.status-complete {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.status-incomplete {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.no-agent-setup {
+    text-align: center;
+    padding: 3rem 2rem;
+}
+
+.no-setup-icon {
+    color: #9ca3af;
+    margin-bottom: 1rem;
+}
+
+.no-agent-setup h3 {
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.no-agent-setup p {
+    color: #6b7280;
 }

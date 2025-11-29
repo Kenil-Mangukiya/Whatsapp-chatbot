@@ -19,6 +19,7 @@ import SetupPage from './pages/SetupPage';
 import UpdateSetupPage from './pages/UpdateSetupPage';
 import AdminPage from './pages/AdminPage';
 import PricingSetupPage from './pages/PricingSetupPage';
+import AgentSetupPage from './pages/AgentSetupPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import SetupRouteGuard from './components/SetupRouteGuard';
@@ -80,6 +81,7 @@ function App() {
             <PricingSetupPage isActive={true} />
           </ProtectedRoute>
         } />
+        <Route path="/agent-setup" element={<AgentSetupPage isActive={true} />} />
         <Route path="/" element={
           <ProtectedRoute>
             <Dashboard />
