@@ -6,6 +6,7 @@ import apiResponse from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { sendWhatsappOTP as sendWhatsappOTPService } from "../services/whatsapp.service.js";
 import { storeOTP, verifyOTP } from "../utils/otpStore.js";
+import { Op } from "sequelize";
 
 // Generate JWT token with user data
 const generateToken = (userId, phoneNumber, rememberMe = false) => {
@@ -247,52 +248,48 @@ export const getAllBusinesses = asyncHandler(async (req, res) => {
     }
 });
 
-// Format phone number utility
+// Format phone number utility for Indian numbers
+// Accepts the following inputs and normalizes them to +91XXXXXXXXXX:
+// - +919904665554       -> +919904665554 (kept as-is)
+// - 9904665554         -> +919904665554
+// - 919904665554       -> +919904665554
+// - +912269539280      -> +912269539280 (kept as-is, landline style is also valid)
 const formatPhoneNumber = (phoneNumber) => {
     if (!phoneNumber) return null;
     
-    // Remove all spaces and special characters except +
-    let cleaned = phoneNumber.replace(/[\s\-\(\)]/g, '');
-    
-    // If already starts with +91, return as is
-    if (cleaned.startsWith('+919')) {
+    // Remove spaces, dashes, brackets but keep leading + if present
+    const cleaned = phoneNumber.replace(/[\s\-\(\)]/g, '');
+    const digitsOnly = cleaned.replace(/\D/g, '');
+
+    // Case 1: already in +91XXXXXXXXXX format
+    if (/^\+91\d{10}$/.test(cleaned)) {
         return cleaned;
     }
-    
-    // If starts with 919 (without +), add +
-    if (cleaned.startsWith('919') && cleaned.length === 13) {
-        return '+' + cleaned;
+
+    // Case 2: starts with 91 and has 10 more digits (no +)
+    if (/^91\d{10}$/.test(digitsOnly)) {
+        return `+${digitsOnly}`; // -> +91XXXXXXXXXX
     }
-    
-    // If starts with 91 (without +) and length is 12, add +
-    if (cleaned.startsWith('91') && cleaned.length === 12) {
-        return '+' + cleaned;
+
+    // Case 3: pure 10‑digit mobile number starting with 6–9
+    if (/^[6-9]\d{9}$/.test(digitsOnly)) {
+        return `+91${digitsOnly}`;
     }
-    
-    // If it's a 10-digit number, add +91
-    if (/^[6-9]\d{9}$/.test(cleaned)) {
-        return '+91' + cleaned;
-    }
-    
-    // If it's already in correct format, return as is
-    if (cleaned.startsWith('+91') && cleaned.length === 13) {
-        return cleaned;
-    }
-    
-    // Return null if format is invalid
+
+    // Anything else is invalid for our Indian format
     return null;
 };
 
-// Validate phone number
+// Validate Indian phone number
+// Ensures final format is +91 followed by 10 digits
 const validatePhoneNumber = (phoneNumber) => {
     const formatted = formatPhoneNumber(phoneNumber);
     if (!formatted) {
-        return { valid: false, message: 'Invalid phone number format' };
+        return { valid: false, message: 'Invalid Indian phone number format. Please enter a 10-digit mobile or +91XXXXXXXXXX.' };
     }
     
-    // Validate Indian mobile number format: +91XXXXXXXXXX
-    if (!/^\+91[6-9]\d{9}$/.test(formatted)) {
-        return { valid: false, message: 'Invalid Indian mobile number format' };
+    if (!/^\+91\d{10}$/.test(formatted)) {
+        return { valid: false, message: 'Invalid Indian phone number format. Must be +91 followed by 10 digits.' };
     }
     
     return { valid: true, formatted };
@@ -323,7 +320,7 @@ export const assignPhoneNumber = asyncHandler(async (req, res) => {
         const existingBusiness = await AuthUser.findOne({
             where: {
                 assignedPhoneNumber: formattedPhone,
-                id: { [require('sequelize').Op.ne]: businessId }
+                id: { [Op.ne]: businessId }
             }
         });
         

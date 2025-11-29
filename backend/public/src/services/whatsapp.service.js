@@ -76,7 +76,7 @@ const data = (contactNumber, templateName, options = {}) => {
     return JSON.stringify(dataObject);
 }
 
-const sendWelcomeMessageTemplate = async (phoneNumber) => {
+const sendRSADetailsTemplate = async (phoneNumber) => {
     console.log("Phone number is : ", phoneNumber);
     if(!phoneNumber) 
     {
@@ -85,7 +85,7 @@ const sendWelcomeMessageTemplate = async (phoneNumber) => {
 
     try
     {
-        const callData = await data(phoneNumber, "welcome_template")
+        const callData = await data(phoneNumber, "rsa_details")
         console.log("Call data is : ", callData);
         const callConfig = await config("POST", "/send-template-message", callData)
         console.log("Call config is : ", callConfig);
@@ -95,7 +95,7 @@ const sendWelcomeMessageTemplate = async (phoneNumber) => {
     }
     catch(error)
     {
-        console.log("Error while sending welcome message template : ", error);
+        console.log("Error while sending RSA details template : ", error);
         throw new apiError(500, "Something went wrong", error.message);
     }
 }
@@ -123,4 +123,4 @@ const sendWhatsappOTP = async (phoneNumber) => {
     }
 }
 
-export { sendWelcomeMessageTemplate, sendWhatsappOTP };
+export { sendRSADetailsTemplate, sendWhatsappOTP };

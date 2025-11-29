@@ -72,43 +72,38 @@ const AdminPage: React.FC = () => {
     setNewPhoneNumber(business.assignedPhoneNumber || '');
   };
 
-  // Format phone number utility
+  // Format phone number utility for Indian numbers
+  // Normalizes inputs to +91XXXXXXXXXX:
+  //  - +919904665554   -> +919904665554 (kept)
+  //  - 9904665554     -> +919904665554
+  //  - 919904665554   -> +919904665554
+  //  - +912269539280  -> +912269539280 (kept, landline style allowed)
   const formatPhoneNumber = (phoneNumber: string): string | null => {
     if (!phoneNumber) return null;
     
-    // Remove all spaces and special characters except +
-    let cleaned = phoneNumber.replace(/[\s\-\(\)]/g, '');
+    // Remove spaces, dashes, brackets but keep leading + if present
+    const cleaned = phoneNumber.replace(/[\s\-\(\)]/g, '');
+    const digitsOnly = cleaned.replace(/\D/g, '');
     
-    // If already starts with +91, return as is
-    if (cleaned.startsWith('+919')) {
+    // Case 1: already +91XXXXXXXXXX
+    if (/^\+91\d{10}$/.test(cleaned)) {
       return cleaned;
     }
     
-    // If starts with 919 (without +), add +
-    if (cleaned.startsWith('919') && cleaned.length === 13) {
-      return '+' + cleaned;
+    // Case 2: 91XXXXXXXXXX (12 digits, no +)
+    if (/^91\d{10}$/.test(digitsOnly)) {
+      return `+${digitsOnly}`;
     }
     
-    // If starts with 91 (without +) and length is 12, add +
-    if (cleaned.startsWith('91') && cleaned.length === 12) {
-      return '+' + cleaned;
+    // Case 3: 10-digit mobile starting with 6–9
+    if (/^[6-9]\d{9}$/.test(digitsOnly)) {
+      return `+91${digitsOnly}`;
     }
     
-    // If it's a 10-digit number, add +91
-    if (/^[6-9]\d{9}$/.test(cleaned)) {
-      return '+91' + cleaned;
-    }
-    
-    // If it's already in correct format, return as is
-    if (cleaned.startsWith('+91') && cleaned.length === 13) {
-      return cleaned;
-    }
-    
-    // Return null if format is invalid
     return null;
   };
 
-  // Validate phone number
+  // Validate Indian phone number
   const validatePhoneNumber = (phoneNumber: string): { valid: boolean; message?: string; formatted?: string } => {
     if (!phoneNumber || !phoneNumber.trim()) {
       return { valid: false, message: 'Phone number is required' };
@@ -116,12 +111,11 @@ const AdminPage: React.FC = () => {
     
     const formatted = formatPhoneNumber(phoneNumber);
     if (!formatted) {
-      return { valid: false, message: 'Invalid phone number format. Please enter a valid 10-digit number or +91XXXXXXXXXX' };
+      return { valid: false, message: 'Invalid Indian phone number format. Please enter a 10-digit mobile or +91XXXXXXXXXX.' };
     }
     
-    // Check if it matches Indian mobile number pattern
-    if (!/^\+91[6-9]\d{9}$/.test(formatted)) {
-      return { valid: false, message: 'Invalid Indian mobile number. Must start with 6, 7, 8, or 9' };
+    if (!/^\+91\d{10}$/.test(formatted)) {
+      return { valid: false, message: 'Invalid Indian phone number format. Must be +91 followed by 10 digits.' };
     }
     
     return { valid: true, formatted };

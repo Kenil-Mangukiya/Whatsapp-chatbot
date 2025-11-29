@@ -4,7 +4,7 @@ import apiError from "../utils/apiError.js";
 import { storeCallHistoryData } from "../services/retell.service.js";
 import { CallHistory, sequelize } from "../db/index.js";
 import { Op } from "sequelize";
-import { sendWhatsappOTP } from "../services/whatsapp.service.js";
+import { sendRSADetailsTemplate } from "../services/whatsapp.service.js";
 
 export const retellWebhook = asyncHandler(async (req, res) => {
     console.log("retell webhook received : ", req.body);
@@ -276,14 +276,14 @@ export const sendWhatsppTemplate = asyncHandler(async (req, res) => {
         }
 
         // Call sendWhatsappOTP with the extracted phone number
-        const response = await sendWhatsappOTP(from_number);
-        console.log("WhatsApp OTP response is : ", response);
+        const response = await sendRSADetailsTemplate(from_number);
+        console.log("RSA details template response is : ", response);
         
-        return res.status(200).json(new apiResponse(200, "Whatsapp OTP sent", response.data));
+        return res.status(200).json(new apiResponse(200, "RSA details template sent", response.data));
     }
     catch(error)
     {
-        console.error("Error sending WhatsApp OTP:", error);
+        console.error("Error sending RSA details template:", error);
         return res.status(500).json(new apiError(500, "Something went wrong", error.message));
     }
 })
