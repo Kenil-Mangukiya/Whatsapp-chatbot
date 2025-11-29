@@ -6,9 +6,9 @@
 }
 
 :root {
-    --primary-color: #4F46E5;
-    --primary-dark: #4338CA;
-    --primary-light: #818CF8;
+    --primary-color: #EE3227;
+    --primary-dark: #C02621;
+    --primary-light: #FF6A5A;
     --secondary-color: #10B981;
     --text-primary: #1F2937;
     --text-secondary: #6B7280;
@@ -59,6 +59,15 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+}
+
+.app-logo-image {
+    height: 32px;
+    width: auto;
+    object-fit: contain;
+}
+
+.logo-text {
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--text-primary);
@@ -75,7 +84,7 @@ body {
     height: 48px;
     border-radius: 12px;
     border: 2px solid #E5E7EB;
-    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    background: linear-gradient(135deg, #EE3227 0%, #FF6A5A 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -83,20 +92,20 @@ body {
     transition: all 0.3s ease;
     padding: 0;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+    box-shadow: 0 2px 8px rgba(238, 50, 39, 0.2);
     position: relative;
     margin-left: 76px;
 }
 
 .business-logo-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-    border-color: #4F46E5;
+    box-shadow: 0 4px 12px rgba(238, 50, 39, 0.3);
+    border-color: #EE3227;
 }
 
 .business-logo-btn:active {
     transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+    box-shadow: 0 2px 6px rgba(238, 50, 39, 0.25);
 }
 
 .business-logo-container {
@@ -121,7 +130,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    background: linear-gradient(135deg, #EE3227 0%, #FF6A5A 100%);
     color: white;
     font-weight: 700;
     font-size: 16px;
@@ -290,7 +299,7 @@ body {
 }
 
 .menu-item.active {
-    background: rgba(79, 70, 229, 0.1);
+    background: rgba(238, 50, 39, 0.1);
     color: var(--primary-color);
 }
 
@@ -311,14 +320,14 @@ body {
 }
 
 .admin-menu-item {
-    background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
-    border: 1px solid rgba(79, 70, 229, 0.2);
+    background: linear-gradient(135deg, rgba(238, 50, 39, 0.1) 0%, rgba(255, 106, 90, 0.1) 100%);
+    border: 1px solid rgba(238, 50, 39, 0.2);
     color: var(--primary-color);
     font-weight: 700;
 }
 
 .admin-menu-item:hover {
-    background: linear-gradient(135deg, rgba(79, 70, 229, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%);
+    background: linear-gradient(135deg, rgba(238, 50, 39, 0.15) 0%, rgba(255, 106, 90, 0.15) 100%);
     border-color: var(--primary-color);
     transform: translateX(4px);
 }
@@ -342,8 +351,8 @@ body {
 
 .trial-card {
     padding: 0.75rem 1rem;
-    background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(129, 140, 248, 0.05) 100%);
-    border: 1px solid rgba(79, 70, 229, 0.2);
+    background: linear-gradient(135deg, rgba(238, 50, 39, 0.05) 0%, rgba(255, 106, 90, 0.05) 100%);
+    border: 1px solid rgba(238, 50, 39, 0.2);
     border-radius: 0.75rem;
     display: flex;
     align-items: center;
@@ -368,7 +377,7 @@ body {
 .progress-bar {
     width: 100%;
     height: 8px;
-    background: rgba(79, 70, 229, 0.1);
+    background: rgba(238, 50, 39, 0.1);
     border-radius: 4px;
     overflow: hidden;
     margin-bottom: 0.5rem;
@@ -681,7 +690,7 @@ body {
 .action-icon {
     width: 48px;
     height: 48px;
-    background: rgba(79, 70, 229, 0.1);
+    background: rgba(238, 50, 39, 0.1);
     border-radius: 0.75rem;
     display: flex;
     align-items: center;
@@ -1051,7 +1060,7 @@ body {
 
 .issue-badge {
     padding: 0.25rem 0.75rem;
-    background: rgba(79, 70, 229, 0.1);
+    background: rgba(238, 50, 39, 0.1);
     color: var(--primary-color);
     border-radius: 1rem;
     font-size: 0.813rem;
@@ -1545,7 +1554,7 @@ input:checked + .toggle-slider:before {
 }
 
 .owner-badge {
-    background: rgba(79, 70, 229, 0.1);
+    background: rgba(238, 50, 39, 0.1);
     color: var(--primary-color);
 }
 
@@ -2104,7 +2113,7 @@ input:checked + .toggle-slider:before {
 
 .icon-action.playing {
     color: var(--primary-color);
-    background: rgba(79, 70, 229, 0.1);
+    background: rgba(238, 50, 39, 0.1);
 }
 
 /* View Details Button */
@@ -2338,8 +2347,8 @@ input:checked + .toggle-slider:before {
     display: flex;
     gap: 1rem;
     padding: 1.25rem;
-    background: rgba(79, 70, 229, 0.05);
-    border: 1px solid rgba(79, 70, 229, 0.2);
+    background: rgba(238, 50, 39, 0.05);
+    border: 1px solid rgba(238, 50, 39, 0.2);
     border-radius: 0.75rem;
     margin-top: 1rem;
 }
@@ -2601,8 +2610,8 @@ input:checked + .toggle-slider:before {
 }
 
 .issue-type-badge.mechanical {
-    background: rgba(79, 70, 229, 0.1);
-    color: #4F46E5;
+    background: rgba(238, 50, 39, 0.1);
+    color: #EE3227;
 }
 
 .issue-type-badge.electrical {
@@ -3149,7 +3158,7 @@ input:checked + .toggle-slider:before {
 .date-input:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(238, 50, 39, 0.1);
 }
 
 .apply-filter-btn {
@@ -3169,9 +3178,9 @@ input:checked + .toggle-slider:before {
 }
 
 .apply-filter-btn:hover {
-    background: #4338CA;
+    background: var(--primary-dark);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 4px 12px rgba(238, 50, 39, 0.3);
 }
 
 .chart-wrapper {
@@ -3481,7 +3490,7 @@ input:checked + .toggle-slider:before {
 .search-input:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(238, 50, 39, 0.1);
 }
 
 .filter-btn {
@@ -3700,7 +3709,7 @@ input:checked + .toggle-slider:before {
 .role-select:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(238, 50, 39, 0.1);
 }
 
 .role-select:disabled {
@@ -3715,8 +3724,8 @@ input:checked + .toggle-slider:before {
 
 .role-select.role-admin {
     color: var(--primary-color);
-    border-color: rgba(79, 70, 229, 0.3);
-    background: rgba(79, 70, 229, 0.05);
+    border-color: rgba(238, 50, 39, 0.3);
+    background: rgba(238, 50, 39, 0.05);
 }
 
 .admin-icon {
@@ -3763,7 +3772,7 @@ input:checked + .toggle-slider:before {
     color: white;
     border-color: var(--primary-color);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 4px 12px rgba(238, 50, 39, 0.3);
 }
 
 .empty-state {
@@ -3940,9 +3949,9 @@ input:checked + .toggle-slider:before {
 }
 
 .modal-btn.primary:hover:not(:disabled) {
-    background: #4338CA;
+    background: var(--primary-dark);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 4px 12px rgba(238, 50, 39, 0.3);
 }
 
 .modal-btn.primary:disabled {
@@ -4020,7 +4029,7 @@ input:checked + .toggle-slider:before {
 .phone-input:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(238, 50, 39, 0.1);
 }
 
 .form-hint {
@@ -4155,7 +4164,7 @@ input:checked + .toggle-slider:before {
 
 .service-item:hover {
     border-color: var(--primary-color);
-    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 2px 8px rgba(238, 50, 39, 0.1);
 }
 
 .service-item:last-child {
@@ -4432,7 +4441,7 @@ input:checked + .toggle-slider:before {
     font-weight: 900;
     color: var(--primary-color);
     line-height: 1;
-    text-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+    text-shadow: 0 4px 6px rgba(238, 50, 39, 0.2);
     animation: float 3s ease-in-out infinite;
 }
 
@@ -4458,7 +4467,7 @@ input:checked + .toggle-slider:before {
 .number-0-icon {
     color: var(--primary-color);
     opacity: 0.8;
-    filter: drop-shadow(0 4px 6px rgba(79, 70, 229, 0.3));
+    filter: drop-shadow(0 4px 6px rgba(238, 50, 39, 0.3));
 }
 
 .not-found-title {
@@ -4503,12 +4512,12 @@ input:checked + .toggle-slider:before {
 .not-found-btn.primary {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     color: white;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 4px 12px rgba(238, 50, 39, 0.3);
 }
 
 .not-found-btn.primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+    box-shadow: 0 6px 16px rgba(238, 50, 39, 0.4);
 }
 
 .not-found-btn.primary:active {
@@ -4545,7 +4554,7 @@ input:checked + .toggle-slider:before {
 .decoration-circle {
     position: absolute;
     border-radius: 50%;
-    background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+    background: linear-gradient(135deg, rgba(238, 50, 39, 0.1) 0%, rgba(255, 106, 90, 0.1) 100%);
     animation: pulse 4s ease-in-out infinite;
 }
 

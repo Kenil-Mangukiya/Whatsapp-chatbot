@@ -86,13 +86,12 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="nav-wrapper">
         <div className="logo">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="18" fill="#4F46E5" opacity="0.1"/>
-            <path d="M20 10L26 16L20 22L14 16L20 10Z" fill="#4F46E5"/>
-            <path d="M12 20C12 15.5817 15.5817 12 20 12V20H12Z" fill="#818CF8"/>
-            <circle cx="20" cy="20" r="4" fill="#4F46E5"/>
-          </svg>
-          <span>RoadAI Assistant</span>
+          <img
+            src="/html/Untitled-2-04.webp"
+            alt="RoadAI Assistant"
+            className="app-logo-image"
+          />
+          <span className="logo-text">RoadAI Assistant</span>
         </div>
         <div className="nav-actions">
           {!loading && (

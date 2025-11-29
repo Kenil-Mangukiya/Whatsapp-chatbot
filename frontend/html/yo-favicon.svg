@@ -1,0 +1,19 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark background to match logo preview -->
+  <rect width="64" height="64" fill="#111111" />
+
+  <!-- Stylized YO letters in bright red -->
+  <text
+    x="10"
+    y="44"
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="32"
+    font-weight="800"
+    fill="#FF2D1A"
+    letter-spacing="2"
+  >
+    Yo
+  </text>
+</svg>
+
+
