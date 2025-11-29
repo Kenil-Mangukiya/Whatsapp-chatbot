@@ -320,9 +320,9 @@ const LoginPage = () => {
   // Show loading while checking auth
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -330,18 +330,16 @@ const LoginPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-lg w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl">
         {/* Logo and Title */}
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="bg-indigo-600 p-3 rounded-xl">
-              <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="20" cy="20" r="18" fill="#FFFFFF" opacity="0.2"/>
-                <path d="M20 10L26 16L20 22L14 16L20 10Z" fill="#FFFFFF"/>
-                <circle cx="20" cy="20" r="4" fill="#FFFFFF"/>
-              </svg>
-            </div>
+            <img
+              src="/html/Untitled-2-04.webp"
+              alt="RoadAI Assistant"
+              className="h-12 w-auto"
+            />
           </div>
           <h2 className="text-3xl font-bold text-gray-900">Welcome</h2>
           <p className="mt-2 text-sm text-gray-600">Sign in or create your RoadAI Assistant account</p>
@@ -366,7 +364,7 @@ const LoginPage = () => {
                     type="tel"
                     value={phoneNumber}
                     onChange={handlePhoneChange}
-                    className={`pl-3 appearance-none relative block w-full py-3 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-colors ${
+                    className={`pl-3 appearance-none relative block w-full py-3 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-colors ${
                       errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="Enter your phone number"
@@ -383,7 +381,7 @@ const LoginPage = () => {
                     type="button"
                     onClick={handleConfirmPhone}
                     disabled={loading || sendingOtp}
-                    className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {sendingOtp ? 'Sending OTP...' : 'Confirm'}
                   </button>
@@ -398,7 +396,7 @@ const LoginPage = () => {
                     type="button"
                     onClick={handleBackToPhone}
                     disabled={loading || sendingOtp}
-                    className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-red-600 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -421,7 +419,7 @@ const LoginPage = () => {
                     value={otp}
                     onChange={handleOtpChange}
                     maxLength={6}
-                    className={`pl-3 appearance-none relative block w-full py-3 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-colors text-center text-2xl tracking-widest ${
+                    className={`pl-3 appearance-none relative block w-full py-3 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-colors text-center text-2xl tracking-widest ${
                       errors.otp ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="000000"
@@ -436,7 +434,7 @@ const LoginPage = () => {
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">OTP expires in:</span>
-                    <span className={`text-sm font-semibold ${timer <= 60 ? 'text-red-600' : 'text-indigo-600'}`}>
+                    <span className={`text-sm font-semibold ${timer <= 60 ? 'text-red-600' : 'text-red-600'}`}>
                       {formatTimer(timer)}
                     </span>
                   </div>
@@ -444,7 +442,7 @@ const LoginPage = () => {
                     type="button"
                     onClick={handleResendOTP}
                     disabled={sendingOtp}
-                    className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                    className="text-sm font-medium text-red-600 hover:text-red-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
                   >
                     {sendingOtp ? 'Sending...' : 'Resend OTP'}
                   </button>
@@ -455,7 +453,7 @@ const LoginPage = () => {
                   <button
                     type="submit"
                     disabled={loading || otp.length !== 6}
-                    className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Verifying...' : 'Submit'}
                   </button>
