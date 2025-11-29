@@ -1,14 +1,11 @@
-import asyncHandler from "../utils/asyncHandler.js";
-import apiResponse from "../utils/apiResponse.js";
-import apiError from "../utils/apiError.js";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
-import uploadOnCloudinary  from "../utils/cloudinary.js";
 import config from "../config/config.js";
 import { AuthUser } from "../db/index.js";
-import { sendWhatsappOTP } from "../services/whatsapp.service.js";
+import apiError from "../utils/apiError.js";
+import apiResponse from "../utils/apiResponse.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import { sendWhatsappOTP as sendWhatsappOTPService } from "../services/whatsapp.service.js";
 import { storeOTP, verifyOTP } from "../utils/otpStore.js";
-import { Op } from "sequelize";
 
 // Generate JWT token with user data
 const generateToken = (userId, phoneNumber, rememberMe = false) => {
@@ -43,59 +40,52 @@ const extractOTPFromResponse = (response) => {
         
         return null;
     } catch (error) {
-        console.error('Error extracting OTP:', error);
+        console.error("Error extracting OTP from response:", error);
         return null;
     }
 };
 
+// Send WhatsApp OTP
 export const sendWhatsppOTP = asyncHandler(async (req, res) => {
     const { phoneNumber } = req.body;
-    console.log("phone number is : ", phoneNumber);
     
     if (!phoneNumber) {
         throw new apiError(400, "Phone number is required");
     }
     
     try {
-        const response = await sendWhatsappOTP(phoneNumber);
-        console.log("WhatsApp response from upmatrix is : ", JSON.stringify(response?.data, null, 2));
+        // Send OTP via WhatsApp service
+        const response = await sendWhatsappOTPService(phoneNumber);
         
         // Extract OTP from response
-        const extractedOtp = extractOTPFromResponse(response);
+        const otp = extractOTPFromResponse(response);
         
-        if (extractedOtp) {
-            // Log the OTP that was sent from upmatrix
-            console.log("===========================================");
-            console.log(`OTP sent from upmatrix for phone ${phoneNumber}: ${extractedOtp}`);
-            console.log("===========================================");
+        if (otp) {
+            // Log the OTP that was sent
+            console.log(`OTP sent to ${phoneNumber}: ${otp}`);
             
-            // Store OTP for validation
-            storeOTP(phoneNumber, extractedOtp);
-            console.log("OTP stored for phone number:", phoneNumber);
-            
-            return res.status(200).json(
-                new apiResponse(200, "Whatsapp OTP sent successfully", { 
-                    message: "OTP sent to your WhatsApp",
-                    // Don't send OTP in response for security
-                })
-            );
+            // Store OTP for verification
+            storeOTP(phoneNumber, otp);
         } else {
-            console.error("Could not extract OTP from response:", JSON.stringify(response?.data, null, 2));
-            throw new apiError(500, "Failed to extract OTP from response");
+            console.warn(`Could not extract OTP from response for ${phoneNumber}`);
+            // Still return success as OTP was sent, just couldn't extract it
         }
+        
+        return res.status(200).json(
+            new apiResponse(200, "OTP sent successfully", {
+                phoneNumber: phoneNumber
+            })
+        );
     } catch (error) {
-        console.log("error is : ", error);
-        throw new apiError(500, "Something went wrong", error.message);
+        console.error("Error sending OTP:", error);
+        throw new apiError(500, "Failed to send OTP", error.message);
     }
 });
 
-// Login/Register endpoint - handles both new and existing users
+// Login/Register User
 export const loginUser = asyncHandler(async (req, res) => {
     const { phoneNumber, otp } = req.body;
     
-    console.log("Login request received for phone:", phoneNumber);
-    
-    // Validate input
     if (!phoneNumber) {
         throw new apiError(400, "Phone number is required");
     }
@@ -127,7 +117,9 @@ export const loginUser = asyncHandler(async (req, res) => {
         user = await AuthUser.create({
             phoneNumber: phoneNumber,
             username: `user_${phoneNumber}`, // Default username
-            email: null // Will be set during setup
+            email: null, // Will be set during setup
+            role: 'user', // Default role is 'user'
+            assignedPhoneNumber: null // Explicitly set to null - only admin can assign
         });
         
         console.log("New user created:", user.id);
@@ -148,122 +140,68 @@ export const loginUser = asyncHandler(async (req, res) => {
     
     res.cookie('authToken', token, cookieOptions);
     
-    // Return success response
     return res.status(200).json(
-        new apiResponse(200, user ? "Login successful" : "Registration and login successful", {
+        new apiResponse(200, "Login successful", {
             user: {
                 id: user.id,
                 phoneNumber: user.phoneNumber,
                 username: user.username
-            },
-            message: user ? "Welcome back!" : "Account created successfully!"
+            }
         })
     );
 });
 
-// Save setup data (business details and pricing)
+// Save Setup Data
 export const saveSetupData = asyncHandler(async (req, res) => {
-    const userId = req.userId; // From authenticate middleware
-    
-    const {
-        businessName,
-        fullName,
-        email,
-        businessSize,
+    const user = req.user; // From authenticate middleware
+    const { 
+        businessName, 
+        fullName, 
+        email, 
+        businessSize, 
         serviceArea,
         startTime,
         endTime,
         vehicleTypes
     } = req.body;
     
-    console.log("Save setup data request for user:", userId);
-    
     // Validate required fields
-    if (!businessName || !businessName.trim()) {
-        throw new apiError(400, "Business name is required");
+    if (!businessName || !fullName || !serviceArea) {
+        throw new apiError(400, "Business name, full name, and service area are required");
     }
     
-    if (!fullName || !fullName.trim()) {
-        throw new apiError(400, "Full name is required");
-    }
-    
-    if (!serviceArea || !serviceArea.trim()) {
-        throw new apiError(400, "Service area is required");
-    }
-    
-    // Validate email format if provided
-    if (email && email.trim()) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            throw new apiError(400, "Please provide a valid email address");
-        }
-    }
-    
-    // Find user
-    const user = await AuthUser.findByPk(userId);
-    
-    if (!user) {
-        throw new apiError(404, "User not found");
-    }
-    
-    // Prepare update data
-    const updateData = {
-        businessName: businessName.trim(),
-        fullName: fullName.trim(),
-        serviceArea: serviceArea.trim()
-    };
-    
-    // Add optional fields if provided
-    if (email && email.trim()) {
-        updateData.email = email.trim();
-    }
-    
-    if (businessSize && businessSize.trim()) {
-        updateData.businessSize = businessSize.trim();
-    }
-    
-    if (startTime) {
-        updateData.startTime = startTime;
-    }
-    
-    if (endTime) {
-        updateData.endTime = endTime;
-    }
-    
-    // Always update vehicleTypes - send empty array if no vehicle types
-    // This ensures deletions are properly saved
-    if (vehicleTypes !== undefined) {
-        if (Array.isArray(vehicleTypes)) {
-            updateData.vehicleTypes = vehicleTypes.length > 0 ? vehicleTypes : null;
-        } else {
-            updateData.vehicleTypes = null;
+    // Validate business hours if provided
+    if (startTime && endTime) {
+        if (startTime >= endTime) {
+            throw new apiError(400, "End time must be greater than start time");
         }
     }
     
     // Update user with setup data
-    await user.update(updateData);
+    await user.update({
+        businessName,
+        fullName,
+        email: email || null,
+        businessSize: businessSize || null,
+        serviceArea,
+        startTime: startTime || null,
+        endTime: endTime || null,
+        vehicleTypes: vehicleTypes && vehicleTypes.length > 0 ? vehicleTypes : null
+    });
     
-    console.log("Setup data saved successfully for user:", userId);
-    
-    // Return success response
     return res.status(200).json(
         new apiResponse(200, "Setup data saved successfully", {
             user: {
                 id: user.id,
                 businessName: user.businessName,
                 fullName: user.fullName,
-                email: user.email,
-                businessSize: user.businessSize,
-                serviceArea: user.serviceArea,
-                startTime: user.startTime,
-                endTime: user.endTime,
-                vehicleTypes: user.vehicleTypes
+                serviceArea: user.serviceArea
             }
         })
     );
 });
 
-// Logout endpoint
+// Logout User
 export const logoutUser = asyncHandler(async (req, res) => {
     // Clear the auth token cookie
     res.clearCookie('authToken', {
@@ -273,13 +211,11 @@ export const logoutUser = asyncHandler(async (req, res) => {
     });
     
     return res.status(200).json(
-        new apiResponse(200, "Logged out successfully", {
-            message: "You have been logged out successfully"
-        })
+        new apiResponse(200, "Logged out successfully", {})
     );
 });
 
-// Get all businesses (Admin endpoint)
+// Get All Businesses (Admin only)
 export const getAllBusinesses = asyncHandler(async (req, res) => {
     try {
         const businesses = await AuthUser.findAll({
@@ -295,39 +231,23 @@ export const getAllBusinesses = asyncHandler(async (req, res) => {
                 'endTime',
                 'vehicleTypes',
                 'assignedPhoneNumber',
+                'role',
                 'createdAt',
                 'updatedAt'
             ],
             order: [['createdAt', 'DESC']]
         });
-
-        // Format the data
-        const formattedBusinesses = businesses.map(business => ({
-            id: business.id,
-            businessName: business.businessName || 'N/A',
-            phoneNumber: business.phoneNumber || 'N/A',
-            fullName: business.fullName || 'N/A',
-            email: business.email || null,
-            businessSize: business.businessSize || null,
-            serviceArea: business.serviceArea || null,
-            startTime: business.startTime || null,
-            endTime: business.endTime || null,
-            vehicleTypes: business.vehicleTypes || null,
-            assignedPhoneNumber: business.assignedPhoneNumber || null,
-            createdAt: business.createdAt,
-            updatedAt: business.updatedAt
-        }));
-
+        
         return res.status(200).json(
-            new apiResponse(200, "Businesses retrieved successfully", formattedBusinesses)
+            new apiResponse(200, "Businesses fetched successfully", businesses)
         );
     } catch (error) {
         console.error("Error fetching businesses:", error);
-        throw new apiError(500, "Error retrieving businesses", error.message);
+        throw new apiError(500, "Error fetching businesses", error.message);
     }
 });
 
-// Utility function to format phone number
+// Format phone number utility
 const formatPhoneNumber = (phoneNumber) => {
     if (!phoneNumber) return null;
     
@@ -363,66 +283,71 @@ const formatPhoneNumber = (phoneNumber) => {
     return null;
 };
 
-// Validate phone number format
+// Validate phone number
 const validatePhoneNumber = (phoneNumber) => {
-    if (!phoneNumber) return { valid: false, message: 'Phone number is required' };
-    
     const formatted = formatPhoneNumber(phoneNumber);
     if (!formatted) {
-        return { valid: false, message: 'Invalid phone number format. Please enter a valid 10-digit number or +91XXXXXXXXXX' };
+        return { valid: false, message: 'Invalid phone number format' };
     }
     
-    // Check if it matches Indian mobile number pattern
+    // Validate Indian mobile number format: +91XXXXXXXXXX
     if (!/^\+91[6-9]\d{9}$/.test(formatted)) {
-        return { valid: false, message: 'Invalid Indian mobile number. Must start with 6, 7, 8, or 9' };
+        return { valid: false, message: 'Invalid Indian mobile number format' };
     }
     
     return { valid: true, formatted };
 };
 
-// Assign/Update phone number to business
+// Assign Phone Number (Admin only)
 export const assignPhoneNumber = asyncHandler(async (req, res) => {
     try {
         const { businessId, phoneNumber } = req.body;
-
+        
         if (!businessId) {
             throw new apiError(400, "Business ID is required");
         }
-
-        // Validate phone number
+        
+        if (!phoneNumber) {
+            throw new apiError(400, "Phone number is required");
+        }
+        
+        // Validate and format phone number
         const validation = validatePhoneNumber(phoneNumber);
         if (!validation.valid) {
             throw new apiError(400, validation.message);
         }
-
+        
         const formattedPhone = validation.formatted;
-
+        
         // Check if phone number is already assigned to another business
         const existingBusiness = await AuthUser.findOne({
             where: {
                 assignedPhoneNumber: formattedPhone,
-                id: { [Op.ne]: businessId }
+                id: { [require('sequelize').Op.ne]: businessId }
             }
         });
-
+        
         if (existingBusiness) {
-            throw new apiError(400, `This phone number is already assigned to "${existingBusiness.businessName || 'another business'}"`);
+            throw new apiError(400, `Number is already assigned to ${existingBusiness.businessName || 'another business'}`);
         }
-
-        // Update the business with assigned phone number
+        
+        // Find the business
         const business = await AuthUser.findByPk(businessId);
         if (!business) {
             throw new apiError(404, "Business not found");
         }
-
+        
+        // Update the business with assigned phone number
         business.assignedPhoneNumber = formattedPhone;
         await business.save();
-
+        
         return res.status(200).json(
             new apiResponse(200, "Phone number assigned successfully", {
-                businessId: business.id,
-                businessName: business.businessName,
-                assignedPhoneNumber: business.assignedPhoneNumber
+                business: {
+                    id: business.id,
+                    businessName: business.businessName,
+                    assignedPhoneNumber: business.assignedPhoneNumber
+                }
             })
         );
     } catch (error) {
@@ -466,4 +391,44 @@ export const removePhoneNumber = asyncHandler(async (req, res) => {
     }
 });
 
-
+// Change user role (Admin only)
+export const changeUserRole = asyncHandler(async (req, res) => {
+    const { businessId, newRole } = req.body;
+    const currentAdmin = req.user; // The logged-in admin
+    
+    // Validate input
+    if (!businessId) {
+        throw new apiError(400, "Business ID is required");
+    }
+    
+    if (!newRole || !['user', 'admin'].includes(newRole)) {
+        throw new apiError(400, "Invalid role. Must be 'user' or 'admin'");
+    }
+    
+    // Find the business/user to update
+    const business = await AuthUser.findByPk(businessId);
+    
+    if (!business) {
+        throw new apiError(404, "Business not found");
+    }
+    
+    // Prevent admin from changing their own role
+    if (business.id === currentAdmin.id) {
+        throw new apiError(403, "You cannot change your own role");
+    }
+    
+    // Update the role
+    business.role = newRole;
+    await business.save();
+    
+    return res.status(200).json(
+        new apiResponse(200, `User role updated to ${newRole}`, {
+            business: {
+                id: business.id,
+                businessName: business.businessName,
+                phoneNumber: business.phoneNumber,
+                role: business.role
+            }
+        })
+    );
+});

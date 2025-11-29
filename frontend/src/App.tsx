@@ -19,8 +19,10 @@ import SetupPage from './pages/SetupPage';
 import UpdateSetupPage from './pages/UpdateSetupPage';
 import AdminPage from './pages/AdminPage';
 import PricingSetupPage from './pages/PricingSetupPage';
+import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import SetupRouteGuard from './components/SetupRouteGuard';
+import AdminRoute from './components/AdminRoute';
 
 function App() {
   return (
@@ -68,7 +70,9 @@ function App() {
         } />
         <Route path="/admin" element={
           <ProtectedRoute requireSetup={false}>
-            <AdminPage />
+            <AdminRoute>
+              <AdminPage />
+            </AdminRoute>
           </ProtectedRoute>
         } />
         <Route path="/pricing-setup" element={
@@ -94,7 +98,7 @@ function App() {
           <Route path="team" element={<TeamPage isActive={true} />} />
           <Route path="support" element={<SupportPage isActive={true} />} />
         </Route>
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
   );

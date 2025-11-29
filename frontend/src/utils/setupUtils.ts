@@ -21,3 +21,4 @@ export const checkSetupStatus = (user: any): boolean => {
   return !!(user.businessName && user.fullName && user.serviceArea);
 };
 
+

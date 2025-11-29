@@ -105,6 +105,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       comment: 'Phone number that received the call'
     },
+    auth_user_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Reference to auth_users table - user who owns this call'
+    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,

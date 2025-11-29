@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Phone, Building2, Search, Filter, UserPlus, Clock, Car, DollarSign, Trash2, Edit2, AlertTriangle } from 'lucide-react';
-import { getAllBusinesses, assignPhoneNumber, removePhoneNumber, BusinessData } from '../services/apis/authAPI';
+import { Eye, Phone, Building2, Search, Filter, UserPlus, Clock, Car, DollarSign, Trash2, Edit2, AlertTriangle, Shield } from 'lucide-react';
+import { getAllBusinesses, assignPhoneNumber, removePhoneNumber, changeUserRole, BusinessData } from '../services/apis/authAPI';
+import api from '../config/api';
 import toast from 'react-hot-toast';
 
 const AdminPage: React.FC = () => {
   const [businesses, setBusinesses] = useState<BusinessData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentAdminId, setCurrentAdminId] = useState<number | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBusiness, setSelectedBusiness] = useState<BusinessData | null>(null);
@@ -13,6 +15,22 @@ const AdminPage: React.FC = () => {
   const [assignPhoneModal, setAssignPhoneModal] = useState<BusinessData | null>(null);
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<BusinessData | null>(null);
+
+  // Fetch current admin user ID
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response: any = await api.get('/user/me');
+        const user = response?.data?.user || response?.user;
+        if (user?.id) {
+          setCurrentAdminId(user.id);
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
 
   // Fetch businesses from API
   useEffect(() => {
@@ -184,6 +202,36 @@ const AdminPage: React.FC = () => {
     }
   };
 
+  // Handle role change
+  const handleRoleChange = async (business: BusinessData, newRole: 'user' | 'admin') => {
+    // Prevent admin from changing their own role
+    if (business.id === currentAdminId) {
+      toast.error('You cannot change your own role');
+      return;
+    }
+
+    try {
+      await changeUserRole({
+        businessId: business.id,
+        newRole
+      });
+
+      // Update local state
+      setBusinesses(prev =>
+        prev.map(b =>
+          b.id === business.id
+            ? { ...b, role: newRole }
+            : b
+        )
+      );
+
+      toast.success(`Role updated to ${newRole}`);
+    } catch (error: any) {
+      console.error('Error changing role:', error);
+      toast.error(error.message || 'Failed to change role');
+    }
+  };
+
   // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -277,13 +325,14 @@ const AdminPage: React.FC = () => {
                 <th>Phone Number</th>
                 <th>Assigned Phone Number</th>
                 <th>Service Area</th>
+                <th>Role</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredBusinesses.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="empty-state">
+                  <td colSpan={7} className="empty-state">
                     <div className="empty-state-content">
                       <Building2 size={48} className="empty-icon" />
                       <p>No businesses found</p>
@@ -349,6 +398,23 @@ const AdminPage: React.FC = () => {
                     <span className="service-area-badge">
                       {business.serviceArea || 'Not specified'}
                     </span>
+                  </td>
+                  <td>
+                    <div className="role-select-wrapper">
+                      <select
+                        className={`role-select ${business.role === 'admin' ? 'role-admin' : 'role-user'}`}
+                        value={business.role || 'user'}
+                        onChange={(e) => handleRoleChange(business, e.target.value as 'user' | 'admin')}
+                        disabled={business.id === currentAdminId}
+                        title={business.id === currentAdminId ? 'You cannot change your own role' : 'Change user role'}
+                      >
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                      {business.role === 'admin' && (
+                        <Shield size={14} className="admin-icon" />
+                      )}
+                    </div>
                   </td>
                   <td>
                     <button

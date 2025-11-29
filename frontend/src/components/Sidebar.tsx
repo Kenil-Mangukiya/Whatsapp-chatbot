@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Shield } from 'lucide-react';
+import api from '../config/api';
 
 interface SidebarProps {
   activePage?: string;
@@ -7,6 +9,27 @@ interface SidebarProps {
 
 const Sidebar = ({ activePage }: SidebarProps) => {
   const location = useLocation();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const response: any = await api.get('/user/me');
+        const user = response?.data?.user || response?.user;
+        const userRole = user?.role || 'user';
+        setIsAdmin(userRole === 'admin');
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAdmin();
+  }, []);
   
   // Get active page from pathname if not provided
   const currentActivePage = activePage || location.pathname.split('/').pop() || 'dashboard';
@@ -139,6 +162,20 @@ const Sidebar = ({ activePage }: SidebarProps) => {
           </li>
         ))}
       </ul>
+      
+      {/* Admin Panel Link - Only visible to admins */}
+      {!loading && isAdmin && (
+        <div className="admin-menu-section">
+          <Link
+            to="/admin"
+            className={`menu-item admin-menu-item ${currentActivePage === 'admin' ? 'active' : ''}`}
+          >
+            <Shield size={20} />
+            <span>Admin Panel</span>
+          </Link>
+        </div>
+      )}
+      
       <div className="sidebar-footer">
         <div className="trial-card">
           <div className="trial-progress">

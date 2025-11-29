@@ -81,6 +81,13 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       unique: true,
       comment: 'Assigned phone number for business operations'
+    },
+    // User Role
+    role: {
+      type: DataTypes.ENUM('user', 'admin'),
+      allowNull: false,
+      defaultValue: 'user',
+      comment: 'User role: user (regular) or admin'
     }
   }, {
     sequelize,

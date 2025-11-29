@@ -36,11 +36,22 @@ export const retellWebhook = asyncHandler(async (req, res) => {
  * Get call history with only required fields for frontend
  * Returns: call_status, created_at, duration_ms, transcript, recording_url, 
  * disconnection_reason, call_summary, user_sentiment, call_successful
+ * Only returns calls for the authenticated user
  */
 export const getCallHistory = asyncHandler(async (req, res) => {
     try {
-        // Fetch all call history records
+        // Get authenticated user ID from middleware
+        const userId = req.user?.id;
+        
+        if (!userId) {
+            throw new apiError(401, "User not authenticated");
+        }
+
+        // Fetch call history records for this user only
         const callHistoryRecords = await CallHistory.findAll({
+            where: {
+                auth_user_id: userId
+            },
             order: [['created_at', 'DESC']], // Most recent first
             attributes: [
                 'call_status',
@@ -90,25 +101,42 @@ export const getCallHistory = asyncHandler(async (req, res) => {
 /**
  * Get dashboard statistics
  * Returns total calls, calls today, total duration, and sentiment counts
+ * Only returns stats for the authenticated user
  */
 export const getDashboardStats = asyncHandler(async (req, res) => {
     try {
-        // Get total calls count
-        const totalCalls = await CallHistory.count();
+        // Get authenticated user ID from middleware
+        const userId = req.user?.id;
+        
+        if (!userId) {
+            throw new apiError(401, "User not authenticated");
+        }
 
-        // Get calls today count
+        // Build where clause for user-specific calls
+        const userWhereClause = {
+            auth_user_id: userId
+        };
+
+        // Get total calls count for this user
+        const totalCalls = await CallHistory.count({
+            where: userWhereClause
+        });
+
+        // Get calls today count for this user
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const callsToday = await CallHistory.count({
             where: {
+                ...userWhereClause,
                 created_at: {
                     [Op.gte]: today
                 }
             }
         });
 
-        // Get total duration (sum of all duration_ms)
+        // Get total duration (sum of all duration_ms) for this user
         const totalDurationResult = await CallHistory.findAll({
+            where: userWhereClause,
             attributes: [
                 [sequelize.fn('SUM', sequelize.col('duration_ms')), 'total_duration']
             ],
@@ -116,10 +144,11 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
         });
         const totalDurationMs = totalDurationResult[0]?.total_duration || 0;
 
-        // Get sentiment counts
+        // Get sentiment counts for this user
         const allCalls = await CallHistory.findAll({
             attributes: ['call_analysis'],
             where: {
+                ...userWhereClause,
                 call_analysis: {
                     [Op.ne]: null
                 }
@@ -168,13 +197,24 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
  * Get calls per day statistics
  * Supports filtering by date range (startDate, endDate)
  * Returns array of { date, count } objects
+ * Only returns stats for the authenticated user
  */
 export const getCallsPerDay = asyncHandler(async (req, res) => {
     try {
+        // Get authenticated user ID from middleware
+        const userId = req.user?.id;
+        
+        if (!userId) {
+            throw new apiError(401, "User not authenticated");
+        }
+
         const { startDate, endDate } = req.query;
         
-        // Build where clause for date filtering
-        const whereClause = {};
+        // Build where clause for date filtering and user filtering
+        const whereClause = {
+            auth_user_id: userId
+        };
+        
         if (startDate || endDate) {
             whereClause.created_at = {};
             if (startDate) {
@@ -187,7 +227,7 @@ export const getCallsPerDay = asyncHandler(async (req, res) => {
             }
         }
 
-        // Get all calls with created_at
+        // Get all calls with created_at for this user
         const calls = await CallHistory.findAll({
             where: whereClause,
             attributes: ['created_at'],

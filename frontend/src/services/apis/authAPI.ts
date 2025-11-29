@@ -138,6 +138,7 @@ export interface BusinessData {
   createdAt: string;
   updatedAt: string;
   assignedPhoneNumber?: string | null;
+  role?: 'user' | 'admin';
 }
 
 export const getAllBusinesses = async (): Promise<{ data: BusinessData[] }> => {
@@ -157,6 +158,11 @@ export interface AssignPhoneData {
 
 export interface RemovePhoneData {
   businessId: number;
+}
+
+export interface ChangeRoleData {
+  businessId: number;
+  newRole: 'user' | 'admin';
 }
 
 export const assignPhoneNumber = async (data: AssignPhoneData) => {
@@ -179,6 +185,16 @@ export const removePhoneNumber = async (data: RemovePhoneData) => {
   }
 };
 
+export const changeUserRole = async (data: ChangeRoleData) => {
+  try {
+    const response: any = await api.post('/user/change-role', data);
+    console.log("Change user role response:", response);
+    return response;
+  } catch (error) {
+    throw getErrorDetails(error);
+  }
+};
+
 export default {
   registerUser,
   authGoogleUser,
@@ -189,5 +205,6 @@ export default {
   getAllBusinesses,
   assignPhoneNumber,
   removePhoneNumber,
+  changeUserRole,
 };
 

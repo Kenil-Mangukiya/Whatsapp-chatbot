@@ -1,6 +1,6 @@
 import express from "express";
-import { sendWhatsppOTP, loginUser, saveSetupData, logoutUser, getAllBusinesses, assignPhoneNumber, removePhoneNumber } from "../controllers/user.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
+import { sendWhatsppOTP, loginUser, saveSetupData, logoutUser, getAllBusinesses, assignPhoneNumber, removePhoneNumber, changeUserRole } from "../controllers/user.controller.js";
+import { authenticate, isAdmin } from "../middleware/auth.middleware.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import apiResponse from "../utils/apiResponse.js";
 
@@ -29,7 +29,8 @@ userRoutes.get("/me", authenticate, asyncHandler(async (req, res) => {
                 serviceArea: user.serviceArea,
                 startTime: user.startTime,
                 endTime: user.endTime,
-                vehicleTypes: user.vehicleTypes
+                vehicleTypes: user.vehicleTypes,
+                role: user.role || 'user' // Include role in response
             },
             setupCompleted: setupCompleted
         })
@@ -42,11 +43,10 @@ userRoutes.post("/setup", authenticate, saveSetupData);
 // Logout route
 userRoutes.post("/logout", logoutUser);
 
-// Admin route to get all businesses
-userRoutes.get("/businesses", authenticate, getAllBusinesses);
-
-// Admin routes for phone number assignment
-userRoutes.post("/assign-phone", authenticate, assignPhoneNumber);
-userRoutes.post("/remove-phone", authenticate, removePhoneNumber);
+// Admin routes - require both authentication and admin role
+userRoutes.get("/businesses", authenticate, isAdmin, getAllBusinesses);
+userRoutes.post("/assign-phone", authenticate, isAdmin, assignPhoneNumber);
+userRoutes.post("/remove-phone", authenticate, isAdmin, removePhoneNumber);
+userRoutes.post("/change-role", authenticate, isAdmin, changeUserRole);
 
 export { userRoutes };

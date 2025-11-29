@@ -38,3 +38,25 @@ export const authenticate = async (req, res, next) => {
         }
     }
 };
+
+// Admin middleware - checks if user is admin
+export const isAdmin = async (req, res, next) => {
+    try {
+        // authenticate middleware must be called first
+        if (!req.user) {
+            throw new apiError(401, "Authentication required");
+        }
+
+        // Check if user is admin
+        if (req.user.role !== 'admin') {
+            throw new apiError(403, "Access denied. Admin privileges required.");
+        }
+
+        next();
+    } catch (error) {
+        if (error instanceof apiError) {
+            throw error;
+        }
+        throw new apiError(500, "Error checking admin status", error.message);
+    }
+};

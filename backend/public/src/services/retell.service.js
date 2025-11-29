@@ -1,7 +1,7 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import apiError from "../utils/apiError.js";
 import apiResponse from "../utils/apiResponse.js";
-import { CallHistory } from "../db/index.js";
+import { CallHistory, AuthUser } from "../db/index.js";
 import { Op } from "sequelize";
 
 /**
@@ -83,6 +83,7 @@ export const filterCallHistoryData = (webhookData) => {
 
 /**
  * Store call history data in database
+ * Only stores if to_number matches an assignedPhoneNumber in auth_users table
  */
 export const storeCallHistoryData = asyncHandler(async (callData) => {
     console.log("Storing call history data:", callData);
@@ -94,6 +95,30 @@ export const storeCallHistoryData = asyncHandler(async (callData) => {
         if (!processedData || !processedData.call_id) {
             throw new apiError(400, "Invalid call data: call_id is required");
         }
+
+        // Extract to_number from processed data
+        const toNumber = processedData.to_number;
+        
+        if (!toNumber) {
+            console.log(`Skipping call history storage: to_number is missing for call_id: ${processedData.call_id}`);
+            return null;
+        }
+
+        // Find user by assignedPhoneNumber
+        const user = await AuthUser.findOne({
+            where: {
+                assignedPhoneNumber: toNumber
+            },
+            attributes: ['id']
+        });
+
+        if (!user) {
+            console.log(`Skipping call history storage: No user found with assignedPhoneNumber: ${toNumber} for call_id: ${processedData.call_id}`);
+            return null;
+        }
+
+        // Add auth_user_id to processed data
+        processedData.auth_user_id = user.id;
         
         // Check if call already exists
         const existingCall = await CallHistory.findOne({
@@ -105,12 +130,12 @@ export const storeCallHistoryData = asyncHandler(async (callData) => {
             await CallHistory.update(processedData, {
                 where: { call_id: processedData.call_id }
             });
-            console.log(`Call history updated for call_id: ${processedData.call_id}`);
+            console.log(`Call history updated for call_id: ${processedData.call_id}, auth_user_id: ${user.id}`);
             return existingCall;
         } else {
             // Create new record
             const newCallHistory = await CallHistory.create(processedData);
-            console.log(`Call history created for call_id: ${processedData.call_id}`);
+            console.log(`Call history created for call_id: ${processedData.call_id}, auth_user_id: ${user.id}`);
             return newCallHistory;
         }
     }

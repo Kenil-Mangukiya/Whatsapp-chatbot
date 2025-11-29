@@ -264,11 +264,20 @@ const LoginPage = () => {
             const setupCompleted = userResponse?.data?.setupCompleted !== undefined 
               ? userResponse?.data?.setupCompleted 
               : userResponse?.setupCompleted;
+            const userRole = user?.role || 'user';
             
             console.log('Extracted user data:', user);
             console.log('Extracted setupCompleted flag:', setupCompleted);
+            console.log('Extracted user role:', userRole);
             
-            // Check setup status
+            // Check if user is admin
+            if (userRole === 'admin') {
+              console.log('✅ Admin user - Navigating to admin page');
+              navigate('/admin', { replace: true });
+              return;
+            }
+            
+            // For regular users, check setup status
             let isSetupComplete = false;
             if (setupCompleted !== undefined) {
               isSetupComplete = setupCompleted;
