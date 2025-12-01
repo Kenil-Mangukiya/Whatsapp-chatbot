@@ -25,4 +25,5 @@ export const whatsappWebhook = asyncHandler(async (req, res) => {
     //     console.log("Error while sending welcome message template : ", error);
     //     return res.status(500).json(new apiError(500, "Something went wrong", error.message));
     // }
-})
+    return res.status(200).json(new apiResponse(200, "Webhook received", { received: true }));
+});

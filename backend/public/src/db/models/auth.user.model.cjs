@@ -111,15 +111,3 @@ module.exports = (sequelize, DataTypes) => {
   });
   return AuthUser;
 };
-
-
-      },
-      {
-        fields: ['email'],
-        unique: false
-      }
-    ]
-  });
-  return AuthUser;
-};
-

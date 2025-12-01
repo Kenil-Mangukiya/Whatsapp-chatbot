@@ -256,30 +256,3 @@ const DashboardNewPage: React.FC<DashboardNewPageProps> = ({ isActive }) => {
 
 export default DashboardNewPage;
 
-
-            <line x1="18" y1="20" x2="18" y2="10"></line>
-            <line x1="12" y1="20" x2="12" y2="4"></line>
-            <line x1="6" y1="20" x2="6" y2="14"></line>
-          </svg>
-          Call Volume Analysis
-        </h2>
-        <p>Daily call statistics and trends</p>
-      </div>
-
-      <div className="chart-section">
-        <CallsPerDayChart isActive={isActive} />
-      </div>
-
-      {/* Sentiment Pie Chart Section */}
-      <div className="chart-section" style={{ marginTop: '2rem' }}>
-        <SentimentPieChart 
-          sentimentCounts={stats?.sentimentCounts || { Positive: 0, Negative: 0, Neutral: 0, Unknown: 0 }}
-          loading={loading}
-        />
-      </div>
-    </div>
-  );
-};
-
-export default DashboardNewPage;
-
