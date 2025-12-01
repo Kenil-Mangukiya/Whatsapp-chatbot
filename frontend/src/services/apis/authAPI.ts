@@ -220,6 +220,17 @@ export const saveAgentSetup = async (data: AgentSetupData) => {
   }
 };
 
+export const getAgentSetup = async (): Promise<{ data: AgentSetupData | null }> => {
+  try {
+    const response: any = await api.get('/user/me');
+    const user = response?.data?.user || response?.user;
+    const agentSetup = user?.agentSetup || null;
+    return { data: agentSetup };
+  } catch (error) {
+    throw getErrorDetails(error);
+  }
+};
+
 export interface AdminLoginAsUserData {
   userId: number;
 }
@@ -245,5 +256,7 @@ export default {
   assignPhoneNumber,
   removePhoneNumber,
   changeUserRole,
+  saveAgentSetup,
+  getAgentSetup,
 };
 

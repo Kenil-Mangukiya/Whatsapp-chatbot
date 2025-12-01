@@ -18,6 +18,8 @@ const AdminPage: React.FC = () => {
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<BusinessData | null>(null);
   const [showAgentSetupModal, setShowAgentSetupModal] = useState<BusinessData | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 20;
 
   // Fetch current admin user ID
   useEffect(() => {
@@ -62,6 +64,27 @@ const AdminPage: React.FC = () => {
     business.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (business.serviceArea && business.serviceArea.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredBusinesses.length / recordsPerPage);
+  const indexOfLastRecord = currentPage * recordsPerPage;
+  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  const currentRecords = filteredBusinesses.slice(indexOfFirstRecord, indexOfLastRecord);
+
+  // Reset to first page when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top of table when page changes
+    const tableContainer = document.querySelector('.admin-table-container');
+    if (tableContainer) {
+      tableContainer.scrollTop = 0;
+    }
+  };
 
   // Handle view more details
   const handleViewMore = (business: BusinessData) => {
@@ -401,7 +424,7 @@ const AdminPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-              filteredBusinesses.map((business) => (
+              currentRecords.map((business) => (
                 <tr key={business.id}>
                   <td>
                     <div className="registered-date-cell">
@@ -425,8 +448,10 @@ const AdminPage: React.FC = () => {
                   <td>
                     {business.assignedPhoneNumber ? (
                       <div className="assigned-phone-cell">
-                        <Phone size={16} className="assigned-icon" />
-                        <span>{business.assignedPhoneNumber}</span>
+                        <div className="phone-number-display">
+                          <Phone size={16} className="assigned-icon" />
+                          <span>{business.assignedPhoneNumber}</span>
+                        </div>
                         <div className="phone-actions">
                           <button
                             className="edit-phone-btn"
@@ -471,7 +496,7 @@ const AdminPage: React.FC = () => {
                           {isAgentSetupComplete(business) ? 'Complete' : 'Incomplete'}
                         </button>
                       ) : (
-                        <span className="agent-setup-badge not-started">Not Started</span>
+                        <span className="agent-setup-badge not-started">Not Configured</span>
                       )}
                     </div>
                   </td>
@@ -519,6 +544,57 @@ const AdminPage: React.FC = () => {
           </table>
         )}
       </div>
+
+      {/* Pagination */}
+      {!loading && filteredBusinesses.length > 0 && totalPages > 1 && (
+        <div className="admin-pagination">
+          <div className="pagination-info">
+            Showing {indexOfFirstRecord + 1} to {Math.min(indexOfLastRecord, filteredBusinesses.length)} of {filteredBusinesses.length} businesses
+          </div>
+          <div className="pagination-controls">
+            <button
+              className="pagination-btn"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+            <div className="pagination-numbers">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                // Show first page, last page, current page, and pages around current
+                if (
+                  page === 1 ||
+                  page === totalPages ||
+                  (page >= currentPage - 1 && page <= currentPage + 1)
+                ) {
+                  return (
+                    <button
+                      key={page}
+                      className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </button>
+                  );
+                } else if (
+                  page === currentPage - 2 ||
+                  page === currentPage + 2
+                ) {
+                  return <span key={page} className="pagination-ellipsis">...</span>;
+                }
+                return null;
+              })}
+            </div>
+            <button
+              className="pagination-btn"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* View More Details Modal */}
       {showDetailsModal && selectedBusiness && (
@@ -864,7 +940,7 @@ const AdminPage: React.FC = () => {
               ) : (
                 <div className="no-agent-setup">
                   <Bot size={48} className="no-setup-icon" />
-                  <h3>Agent Setup Not Started</h3>
+                  <h3>Agent Setup Not Configured</h3>
                   <p>This user has not configured their agent setup yet.</p>
                 </div>
               )}

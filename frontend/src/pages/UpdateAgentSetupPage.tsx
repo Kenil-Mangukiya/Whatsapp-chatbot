@@ -48,12 +48,14 @@ const AgentSetupPage: React.FC<AgentSetupPageProps> = ({ isActive }) => {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [enableTransferCall, setEnableTransferCall] = useState(false);
 
-  // Fetch existing agent setup data on component mount (if any)
+  // Fetch existing agent setup data on component mount
   useEffect(() => {
     const fetchAgentSetup = async () => {
       try {
+        setIsLoading(true);
         const response = await getAgentSetup();
         if (response.data) {
           const existingData = response.data;
@@ -72,7 +74,9 @@ const AgentSetupPage: React.FC<AgentSetupPageProps> = ({ isActive }) => {
         }
       } catch (error: any) {
         console.error('Error fetching agent setup:', error);
-        // If no agent setup exists, form will remain empty (which is fine for new users)
+        // If no agent setup exists, form will remain empty (which is fine)
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -127,8 +131,8 @@ const AgentSetupPage: React.FC<AgentSetupPageProps> = ({ isActive }) => {
       
       toast.success('Agent setup saved successfully!');
       
-      // Navigate to dashboard
-      navigate('/dashboard');
+      // Stay on the same page to allow further edits
+      // Optionally navigate to dashboard: navigate('/dashboard');
     } catch (error: any) {
       console.error('Error saving agent setup:', error);
       toast.error(error.message || 'Failed to save agent setup. Please try again.');
@@ -142,11 +146,32 @@ const AgentSetupPage: React.FC<AgentSetupPageProps> = ({ isActive }) => {
     navigate('/dashboard');
   };
 
+  if (isLoading) {
+    return (
+      <div className="App">
+        <Navbar />
+        <div className="dashboard-container">
+          <Sidebar activePage="update-agent-setup" />
+          <main className="main-content">
+            <div className={`page-content ${isActive ? 'active' : ''}`}>
+              <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+                  <p className="mt-4 text-gray-600">Loading agent setup...</p>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="App">
       <Navbar />
       <div className="dashboard-container">
-        <Sidebar activePage="agent-setup" />
+        <Sidebar activePage="update-agent-setup" />
         <main className="main-content">
           <div className={`page-content ${isActive ? 'active' : ''}`}>
             <div className="pt-4 pb-16 px-4 sm:px-6 lg:px-8">
