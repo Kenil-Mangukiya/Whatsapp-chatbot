@@ -46,6 +46,11 @@ const Sidebar = ({ activePage }: SidebarProps) => {
       navigate('/login', { replace: true });
     }
   };
+
+  // Handle upgrade plan button click
+  const handleUpgradePlan = () => {
+    navigate('/pricing');
+  };
   
   // Get active page from pathname if not provided
   const currentActivePage = activePage || location.pathname.split('/').pop() || 'dashboard';
@@ -221,8 +226,16 @@ const Sidebar = ({ activePage }: SidebarProps) => {
       
       <div className="sidebar-footer">
         <div className="trial-card">
-          <div className="trial-progress">
-            <span className="trial-text">Free 1 month trial</span>
+          <div className="trial-content">
+            <div className="trial-progress">
+              <span className="trial-text">Free 1 month trial</span>
+            </div>
+            <button 
+              onClick={handleUpgradePlan}
+              className="upgrade-plan-btn"
+            >
+              Upgrade Plan
+            </button>
           </div>
         </div>
       </div>
