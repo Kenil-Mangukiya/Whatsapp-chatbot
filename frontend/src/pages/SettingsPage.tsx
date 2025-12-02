@@ -220,7 +220,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ isActive }) => {
               className="setting-textarea"
               value={settings.businessAddress}
               onChange={(e) => handleSettingChange('businessAddress', e.target.value)}
-              rows="3"
+              rows={3}
             />
           </div>
         </div>
@@ -252,7 +252,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ isActive }) => {
               className="setting-textarea"
               value={settings.greetingMessage}
               onChange={(e) => handleSettingChange('greetingMessage', e.target.value)}
-              rows="3"
+              rows={3}
             />
           </div>
           <div className="setting-item">
@@ -264,7 +264,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ isActive }) => {
               className="setting-textarea"
               value={settings.fallbackMessage}
               onChange={(e) => handleSettingChange('fallbackMessage', e.target.value)}
-              rows="3"
+              rows={3}
             />
           </div>
         </div>
