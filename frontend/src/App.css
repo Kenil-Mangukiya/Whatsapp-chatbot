@@ -4933,6 +4933,11 @@ input:checked + .toggle-slider:before {
     color: white;
 }
 
+.agent-setup-btn.not-configured {
+    background-color: #ef4444;
+    color: white;
+}
+
 .agent-setup-btn:hover {
     opacity: 0.9;
     transform: translateY(-1px);

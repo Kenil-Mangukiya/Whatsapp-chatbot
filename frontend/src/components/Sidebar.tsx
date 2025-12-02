@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Shield, User, LogOut } from 'lucide-react';
+import { Shield, User, LogOut, ArrowLeftCircle } from 'lucide-react';
 import api from '../config/api';
 import toast from 'react-hot-toast';
 
@@ -13,8 +13,9 @@ const Sidebar = ({ activePage }: SidebarProps) => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [adminSession, setAdminSession] = useState<any>(null);
   
-  // Check if user is admin
+  // Check if user is admin and check for admin session
   useEffect(() => {
     const checkAdmin = async () => {
       try {
@@ -30,8 +31,37 @@ const Sidebar = ({ activePage }: SidebarProps) => {
       }
     };
 
+    // Check for admin session in localStorage
+    const storedAdminSession = localStorage.getItem('adminSession');
+    if (storedAdminSession) {
+      try {
+        const session = JSON.parse(storedAdminSession);
+        setAdminSession(session);
+      } catch (e) {
+        console.error('Error parsing admin session:', e);
+      }
+    }
+
     checkAdmin();
   }, []);
+
+  // Handle back to admin
+  const handleBackToAdmin = async () => {
+    try {
+      // Clear admin session
+      localStorage.removeItem('adminSession');
+      // Logout current user session
+      await api.post('/user/logout');
+      // Navigate to admin page
+      navigate('/admin', { replace: true });
+      toast.success('Returned to admin panel');
+    } catch (error: any) {
+      console.error('Error returning to admin:', error);
+      // Still navigate to admin page even if logout fails
+      localStorage.removeItem('adminSession');
+      navigate('/admin', { replace: true });
+    }
+  };
 
   // Handle logout
   const handleLogout = async () => {
@@ -200,8 +230,22 @@ const Sidebar = ({ activePage }: SidebarProps) => {
         ))}
       </ul>
       
-      {/* Admin Panel Link - Only visible to admins */}
-      {!loading && isAdmin && (
+      {/* Back to Admin Button - Visible when admin is logged in as user */}
+      {!loading && adminSession && (
+        <div className="admin-menu-section">
+          <button
+            onClick={handleBackToAdmin}
+            className="menu-item admin-menu-item back-to-admin"
+            style={{ width: '100%', textAlign: 'left', cursor: 'pointer' }}
+          >
+            <ArrowLeftCircle size={20} />
+            <span>Back to Admin</span>
+          </button>
+        </div>
+      )}
+
+      {/* Admin Panel Link - Only visible to admins (when not logged in as user) */}
+      {!loading && isAdmin && !adminSession && (
         <div className="admin-menu-section">
           <Link
             to="/admin"

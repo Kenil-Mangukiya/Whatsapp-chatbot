@@ -525,6 +525,143 @@ export const saveAgentSetup = asyncHandler(async (req, res) => {
     );
 });
 
+// Admin Get Agent Setup for Specific User (Admin only)
+export const adminGetAgentSetup = asyncHandler(async (req, res) => {
+    const currentAdminId = req.userId;
+    
+    if (!currentAdminId) {
+        throw new apiError(401, "Authentication required");
+    }
+    
+    // Verify current user is admin
+    const admin = await AuthUser.findByPk(currentAdminId);
+    if (!admin || admin.role !== 'admin') {
+        throw new apiError(403, "Access denied. Admin privileges required.");
+    }
+    
+    const { userId } = req.params;
+    
+    if (!userId) {
+        throw new apiError(400, "User ID is required");
+    }
+    
+    // Find agent setup for the target user
+    const agentSetup = await AgentSetup.findOne({
+        where: { auth_user_id: userId }
+    });
+    
+    if (!agentSetup) {
+        return res.status(200).json(
+            new apiResponse(200, "Agent setup not found", {
+                agentSetup: null
+            })
+        );
+    }
+    
+    return res.status(200).json(
+        new apiResponse(200, "Agent setup retrieved successfully", {
+            agentSetup: {
+                id: agentSetup.id,
+                agentName: agentSetup.agentName,
+                agentVoice: agentSetup.agentVoice,
+                agentLanguage: agentSetup.agentLanguage,
+                welcomeMessage: agentSetup.welcomeMessage,
+                agentFlow: agentSetup.agentFlow,
+                customerDetails: agentSetup.customerDetails,
+                transferCall: agentSetup.transferCall,
+                endingMessage: agentSetup.endingMessage,
+                createdAt: agentSetup.createdAt,
+                updatedAt: agentSetup.updatedAt
+            }
+        })
+    );
+});
+
+// Admin Save Agent Setup for Specific User (Admin only)
+export const adminSaveAgentSetup = asyncHandler(async (req, res) => {
+    const currentAdminId = req.userId;
+    
+    if (!currentAdminId) {
+        throw new apiError(401, "Authentication required");
+    }
+    
+    // Verify current user is admin
+    const admin = await AuthUser.findByPk(currentAdminId);
+    if (!admin || admin.role !== 'admin') {
+        throw new apiError(403, "Access denied. Admin privileges required.");
+    }
+    
+    const { userId } = req.params;
+    
+    if (!userId) {
+        throw new apiError(400, "User ID is required");
+    }
+    
+    // Verify target user exists
+    const targetUser = await AuthUser.findByPk(userId);
+    if (!targetUser) {
+        throw new apiError(404, "User not found");
+    }
+    
+    const {
+        agentName,
+        agentVoice,
+        agentLanguage,
+        welcomeMessage,
+        agentFlow,
+        customerDetails,
+        transferCall,
+        endingMessage
+    } = req.body;
+    
+    // Find or create agent setup for the target user
+    let agentSetup = await AgentSetup.findOne({
+        where: { auth_user_id: userId }
+    });
+    
+    if (agentSetup) {
+        // Update existing agent setup
+        agentSetup.agentName = agentName || null;
+        agentSetup.agentVoice = agentVoice || null;
+        agentSetup.agentLanguage = agentLanguage || null;
+        agentSetup.welcomeMessage = welcomeMessage || null;
+        agentSetup.agentFlow = agentFlow || null;
+        agentSetup.customerDetails = customerDetails || null;
+        agentSetup.transferCall = transferCall || null;
+        agentSetup.endingMessage = endingMessage || null;
+        await agentSetup.save();
+    } else {
+        // Create new agent setup
+        agentSetup = await AgentSetup.create({
+            auth_user_id: userId,
+            agentName: agentName || null,
+            agentVoice: agentVoice || null,
+            agentLanguage: agentLanguage || null,
+            welcomeMessage: welcomeMessage || null,
+            agentFlow: agentFlow || null,
+            customerDetails: customerDetails || null,
+            transferCall: transferCall || null,
+            endingMessage: endingMessage || null
+        });
+    }
+    
+    return res.status(200).json(
+        new apiResponse(200, "Agent setup saved successfully", {
+            agentSetup: {
+                id: agentSetup.id,
+                agentName: agentSetup.agentName,
+                agentVoice: agentSetup.agentVoice,
+                agentLanguage: agentSetup.agentLanguage,
+                welcomeMessage: agentSetup.welcomeMessage,
+                agentFlow: agentSetup.agentFlow,
+                customerDetails: agentSetup.customerDetails,
+                transferCall: agentSetup.transferCall,
+                endingMessage: agentSetup.endingMessage
+            }
+        })
+    );
+});
+
 // Admin Login As User (Admin only)
 export const adminLoginAsUser = asyncHandler(async (req, res) => {
     const currentAdminId = req.userId;

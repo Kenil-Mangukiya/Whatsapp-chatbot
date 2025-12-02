@@ -210,22 +210,36 @@ export interface AgentSetupData {
   updatedAt?: string;
 }
 
-export const saveAgentSetup = async (data: AgentSetupData) => {
+export const saveAgentSetup = async (data: AgentSetupData, userId?: number) => {
   try {
-    const response: any = await api.post('/user/agent-setup', data);
-    console.log("Save agent setup response:", response);
-    return response;
+    // If userId is provided, use admin endpoint
+    if (userId) {
+      const response: any = await api.post(`/user/admin/agent-setup/${userId}`, data);
+      console.log("Save agent setup response (admin):", response);
+      return response;
+    } else {
+      const response: any = await api.post('/user/agent-setup', data);
+      console.log("Save agent setup response:", response);
+      return response;
+    }
   } catch (error) {
     throw getErrorDetails(error);
   }
 };
 
-export const getAgentSetup = async (): Promise<{ data: AgentSetupData | null }> => {
+export const getAgentSetup = async (userId?: number): Promise<{ data: AgentSetupData | null }> => {
   try {
-    const response: any = await api.get('/user/me');
-    const user = response?.data?.user || response?.user;
-    const agentSetup = user?.agentSetup || null;
-    return { data: agentSetup };
+    // If userId is provided, use admin endpoint
+    if (userId) {
+      const response: any = await api.get(`/user/admin/agent-setup/${userId}`);
+      const agentSetup = response?.data?.agentSetup || null;
+      return { data: agentSetup };
+    } else {
+      const response: any = await api.get('/user/me');
+      const user = response?.data?.user || response?.user;
+      const agentSetup = user?.agentSetup || null;
+      return { data: agentSetup };
+    }
   } catch (error) {
     throw getErrorDetails(error);
   }

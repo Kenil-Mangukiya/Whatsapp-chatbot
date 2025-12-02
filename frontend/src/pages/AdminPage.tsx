@@ -17,7 +17,6 @@ const AdminPage: React.FC = () => {
   const [assignPhoneModal, setAssignPhoneModal] = useState<BusinessData | null>(null);
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<BusinessData | null>(null);
-  const [showAgentSetupModal, setShowAgentSetupModal] = useState<BusinessData | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 20;
 
@@ -320,6 +319,14 @@ const AdminPage: React.FC = () => {
     }
     
     try {
+      // Store admin session info before logging in as user
+      const adminSession = {
+        isAdminSession: true,
+        adminId: currentAdminId,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('adminSession', JSON.stringify(adminSession));
+      
       await adminLoginAsUser({ userId: business.id });
       toast.success(`Logged in as ${business.businessName}`);
       // Navigate to dashboard
@@ -330,9 +337,16 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  // Handle view agent setup details
+  // Handle view agent setup details - navigate to appropriate page
   const handleViewAgentSetup = (business: BusinessData) => {
-    setShowAgentSetupModal(business);
+    const isComplete = isAgentSetupComplete(business);
+    if (isComplete) {
+      // Navigate to update agent setup page with userId
+      navigate(`/update-agent-setup?userId=${business.id}`);
+    } else {
+      // Navigate to agent setup page with userId
+      navigate(`/agent-setup?userId=${business.id}`);
+    }
   };
 
   return (
@@ -490,13 +504,20 @@ const AdminPage: React.FC = () => {
                         <button
                           className={`agent-setup-btn ${isAgentSetupComplete(business) ? 'complete' : 'incomplete'}`}
                           onClick={() => handleViewAgentSetup(business)}
-                          title={isAgentSetupComplete(business) ? 'View agent setup details' : 'Agent setup incomplete'}
+                          title={isAgentSetupComplete(business) ? 'View and update agent setup' : 'Complete agent setup'}
                         >
                           <Bot size={16} />
                           {isAgentSetupComplete(business) ? 'Complete' : 'Incomplete'}
                         </button>
                       ) : (
-                        <span className="agent-setup-badge not-started">Not Configured</span>
+                        <button
+                          className="agent-setup-btn not-configured"
+                          onClick={() => handleViewAgentSetup(business)}
+                          title="Configure agent setup"
+                        >
+                          <Bot size={16} />
+                          Not Configured
+                        </button>
                       )}
                     </div>
                   </td>
@@ -860,94 +881,6 @@ const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* Agent Setup Details Modal */}
-      {showAgentSetupModal && (
-        <div className="modal-overlay" onClick={() => setShowAgentSetupModal(null)}>
-          <div className="modal-content agent-setup-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Agent Setup Details - {showAgentSetupModal.businessName}</h2>
-              <button
-                className="modal-close-btn"
-                onClick={() => setShowAgentSetupModal(null)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              {showAgentSetupModal.agentSetup ? (
-                <div className="agent-setup-details">
-                  <div className="detail-section">
-                    <h3>Agent Configuration</h3>
-                    <div className="detail-grid">
-                      <div className="detail-item">
-                        <label>Agent Name</label>
-                        <p>{showAgentSetupModal.agentSetup.agentName || <span className="not-filled">Not filled</span>}</p>
-                      </div>
-                      <div className="detail-item">
-                        <label>Agent Voice</label>
-                        <p>
-                          {showAgentSetupModal.agentSetup.agentVoice ? (
-                            <span className="badge">{showAgentSetupModal.agentSetup.agentVoice === 'male' ? 'Male' : 'Female'}</span>
-                          ) : (
-                            <span className="not-filled">Not filled</span>
-                          )}
-                        </p>
-                      </div>
-                      <div className="detail-item">
-                        <label>Agent Language</label>
-                        <p>{showAgentSetupModal.agentSetup.agentLanguage || <span className="not-filled">Not filled</span>}</p>
-                      </div>
-                      <div className="detail-item">
-                        <label>Welcome Message</label>
-                        <p>{showAgentSetupModal.agentSetup.welcomeMessage || <span className="not-filled">Not filled</span>}</p>
-                      </div>
-                      <div className="detail-item full-width">
-                        <label>Agent Flow</label>
-                        <p>{showAgentSetupModal.agentSetup.agentFlow || <span className="not-filled">Not filled</span>}</p>
-                      </div>
-                      <div className="detail-item full-width">
-                        <label>Customer Details Required</label>
-                        <p>{showAgentSetupModal.agentSetup.customerDetails || <span className="not-filled">Not filled</span>}</p>
-                      </div>
-                      <div className="detail-item full-width">
-                        <label>Transfer Call Conditions</label>
-                        <p>{showAgentSetupModal.agentSetup.transferCall || <span className="not-filled">Not filled</span>}</p>
-                      </div>
-                      <div className="detail-item full-width">
-                        <label>Ending Message</label>
-                        <p>{showAgentSetupModal.agentSetup.endingMessage || <span className="not-filled">Not filled</span>}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="detail-section">
-                    <h3>Setup Status</h3>
-                    <div className="status-summary">
-                      <p>
-                        <strong>Status:</strong>{' '}
-                        <span className={isAgentSetupComplete(showAgentSetupModal) ? 'status-complete' : 'status-incomplete'}>
-                          {isAgentSetupComplete(showAgentSetupModal) ? 'Partially/Complete' : 'Incomplete'}
-                        </span>
-                      </p>
-                      <p>
-                        <strong>Created:</strong> {showAgentSetupModal.agentSetup.createdAt ? formatDate(showAgentSetupModal.agentSetup.createdAt) : 'N/A'}
-                      </p>
-                      <p>
-                        <strong>Last Updated:</strong> {showAgentSetupModal.agentSetup.updatedAt ? formatDate(showAgentSetupModal.agentSetup.updatedAt) : 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="no-agent-setup">
-                  <Bot size={48} className="no-setup-icon" />
-                  <h3>Agent Setup Not Configured</h3>
-                  <p>This user has not configured their agent setup yet.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

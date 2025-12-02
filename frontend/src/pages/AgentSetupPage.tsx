@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, SkipForward } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Save, ArrowLeft, SkipForward, ArrowLeftCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import { saveAgentSetup, getAgentSetup, AgentSetupData } from '../services/apis/authAPI';
+import api from '../config/api';
 
 interface AgentSetupPageProps {
   isActive?: boolean;
@@ -34,6 +35,10 @@ interface FormErrors {
 
 const AgentSetupPage: React.FC<AgentSetupPageProps> = ({ isActive }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const userId = searchParams.get('userId');
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminSession, setAdminSession] = useState<any>(null);
   
   const [formData, setFormData] = useState<FormData>({
     agentName: '',
@@ -50,11 +55,41 @@ const AgentSetupPage: React.FC<AgentSetupPageProps> = ({ isActive }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [enableTransferCall, setEnableTransferCall] = useState(false);
 
+  // Check if admin and load admin session
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const response: any = await api.get('/user/me');
+        const user = response?.data?.user || response?.user;
+        const userRole = user?.role || 'user';
+        setIsAdmin(userRole === 'admin');
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      }
+    };
+
+    // Check for admin session in localStorage
+    const storedAdminSession = localStorage.getItem('adminSession');
+    if (storedAdminSession) {
+      try {
+        const session = JSON.parse(storedAdminSession);
+        setAdminSession(session);
+      } catch (e) {
+        console.error('Error parsing admin session:', e);
+      }
+    }
+
+    checkAdmin();
+  }, []);
+
   // Fetch existing agent setup data on component mount (if any)
   useEffect(() => {
     const fetchAgentSetup = async () => {
       try {
-        const response = await getAgentSetup();
+        // If userId is provided and user is admin, fetch that user's agent setup
+        const targetUserId = (userId && (isAdmin || adminSession)) ? parseInt(userId) : undefined;
+        const response = await getAgentSetup(targetUserId);
         if (response.data) {
           const existingData = response.data;
           const hasTransferCall = !!(existingData.transferCall && existingData.transferCall.trim());
@@ -76,8 +111,12 @@ const AgentSetupPage: React.FC<AgentSetupPageProps> = ({ isActive }) => {
       }
     };
 
-    fetchAgentSetup();
-  }, []);
+    // Only fetch if we've checked admin status (or if no userId is provided)
+    if (!userId || isAdmin !== null || adminSession !== null) {
+      fetchAgentSetup();
+    }
+  }, [userId, isAdmin, adminSession]);
+
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -123,12 +162,18 @@ const AgentSetupPage: React.FC<AgentSetupPageProps> = ({ isActive }) => {
         endingMessage: formData.endingMessage || undefined
       };
       
-      await saveAgentSetup(agentSetupData);
+      // If userId is provided and user is admin, save to that user's agent setup
+      const targetUserId = (userId && (isAdmin || adminSession)) ? parseInt(userId) : undefined;
+      await saveAgentSetup(agentSetupData, targetUserId);
       
       toast.success('Agent setup saved successfully!');
       
-      // Navigate to dashboard
-      navigate('/dashboard');
+      // Navigate based on context
+      if (userId && (isAdmin || adminSession)) {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       console.error('Error saving agent setup:', error);
       toast.error(error.message || 'Failed to save agent setup. Please try again.');
@@ -153,13 +198,26 @@ const AgentSetupPage: React.FC<AgentSetupPageProps> = ({ isActive }) => {
               <div className="max-w-5xl mx-auto">
                 {/* Header */}
                 <div className="mb-10">
-                  <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-                  >
-                    <ArrowLeft size={20} />
-                    <span>Back</span>
-                  </button>
+                  <div className="flex items-center justify-between mb-4">
+                    <button
+                      onClick={() => {
+                        if (userId && (isAdmin || adminSession)) {
+                          navigate('/admin');
+                        } else {
+                          navigate(-1);
+                        }
+                      }}
+                      className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                    >
+                      <ArrowLeft size={20} />
+                      <span>{userId && (isAdmin || adminSession) ? 'Back to Admin' : 'Back'}</span>
+                    </button>
+                    {userId && (isAdmin || adminSession) && (
+                      <div className="text-sm text-gray-500 bg-blue-50 px-3 py-1 rounded-md">
+                        Admin View - User ID: {userId}
+                      </div>
+                    )}
+                  </div>
                   <h1 className="text-4xl font-bold text-gray-900 mb-3">
                     Agent Setup
                   </h1>

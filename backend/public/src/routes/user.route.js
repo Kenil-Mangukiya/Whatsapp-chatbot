@@ -1,5 +1,5 @@
 import express from "express";
-import { sendWhatsppOTP, loginUser, saveSetupData, logoutUser, getAllBusinesses, assignPhoneNumber, removePhoneNumber, changeUserRole, saveAgentSetup, adminLoginAsUser } from "../controllers/user.controller.js";
+import { sendWhatsppOTP, loginUser, saveSetupData, logoutUser, getAllBusinesses, assignPhoneNumber, removePhoneNumber, changeUserRole, saveAgentSetup, adminLoginAsUser, adminGetAgentSetup, adminSaveAgentSetup } from "../controllers/user.controller.js";
 import { authenticate, isAdmin } from "../middleware/auth.middleware.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import apiResponse from "../utils/apiResponse.js";
@@ -80,5 +80,7 @@ userRoutes.post("/assign-phone", authenticate, isAdmin, assignPhoneNumber);
 userRoutes.post("/remove-phone", authenticate, isAdmin, removePhoneNumber);
 userRoutes.post("/change-role", authenticate, isAdmin, changeUserRole);
 userRoutes.post("/admin/login-as-user", authenticate, isAdmin, adminLoginAsUser);
+userRoutes.get("/admin/agent-setup/:userId", authenticate, isAdmin, adminGetAgentSetup);
+userRoutes.post("/admin/agent-setup/:userId", authenticate, isAdmin, adminSaveAgentSetup);
 
 export { userRoutes };
