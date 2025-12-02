@@ -192,14 +192,14 @@ const VoiceLabPage: React.FC<VoiceLabPageProps> = ({ isActive }) => {
         setPlayingVoiceId(voice.id);
         
         // Generate audio preview
-        const audioBlob = await generateTTSPreview(
+        const audioBlobString = await generateTTSPreview(
           voice.id,
           text
         );
         
         // Create audio URL and play
         // Convert string to Blob for URL.createObjectURL
-        const audioUrl = URL.createObjectURL(new Blob([audioBlob]));
+        const audioUrl = URL.createObjectURL(new Blob([audioBlobString]));
         const audio = new Audio(audioUrl);
         audioRef.current = audio;
         
