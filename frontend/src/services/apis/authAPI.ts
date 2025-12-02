@@ -259,6 +259,20 @@ export const adminLoginAsUser = async (data: AdminLoginAsUserData) => {
   }
 };
 
+export interface AdminReturnToAdminData {
+  adminId: number;
+}
+
+export const adminReturnToAdmin = async (data: AdminReturnToAdminData) => {
+  try {
+    const response: any = await api.post('/user/admin/return-to-admin', data);
+    console.log("Admin return to admin response:", response);
+    return response;
+  } catch (error) {
+    throw getErrorDetails(error);
+  }
+};
+
 export default {
   registerUser,
   authGoogleUser,
@@ -272,5 +286,6 @@ export default {
   changeUserRole,
   saveAgentSetup,
   getAgentSetup,
+  adminReturnToAdmin,
 };
 

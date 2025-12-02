@@ -60,7 +60,7 @@ function App() {
       />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        {/* <Route path="/register" element={<RegisterPage />} /> */}
         <Route path="/setup" element={
           <ProtectedRoute requireSetup={false}>
             <SetupRouteGuard />
@@ -95,17 +95,17 @@ function App() {
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard-new" element={<DashboardPage isActive={true} />} />
+          {/* <Route path="dashboard-new" element={<DashboardPage isActive={true} />} /> */}
           <Route path="dashboard" element={<DashboardNewPage isActive={true} />} />
-          <Route path="agents" element={<AgentsPage isActive={true} />} />
-          <Route path="voice-lab" element={<VoiceLabPage isActive={true} />} />
+          {/* <Route path="agents" element={<AgentsPage isActive={true} />} /> */}
+          {/* <Route path="voice-lab" element={<VoiceLabPage isActive={true} />} /> */}
           <Route path="calls" element={<CallsPage isActive={true} />} />
-          <Route path="analytics" element={<AnalyticsPage isActive={true} />} />
-          <Route path="crm" element={<CRMPage isActive={true} />} />
-          <Route path="invoicing" element={<InvoicingPage isActive={true} />} />
-          <Route path="settings" element={<SettingsPage isActive={true} />} />
-          <Route path="team" element={<TeamPage isActive={true} />} />
-          <Route path="support" element={<SupportPage isActive={true} />} />
+          {/* <Route path="analytics" element={<AnalyticsPage isActive={true} />} /> */}
+          {/* <Route path="crm" element={<CRMPage isActive={true} />} /> */}
+          {/* <Route path="invoicing" element={<InvoicingPage isActive={true} />} /> */}
+          {/* <Route path="settings" element={<SettingsPage isActive={true} />} /> */}
+          {/* <Route path="team" element={<TeamPage isActive={true} />} /> */}
+          {/* <Route path="support" element={<SupportPage isActive={true} />} /> */}
           <Route path="pricing" element={<PricingPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />

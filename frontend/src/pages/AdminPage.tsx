@@ -17,6 +17,8 @@ const AdminPage: React.FC = () => {
   const [assignPhoneModal, setAssignPhoneModal] = useState<BusinessData | null>(null);
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<BusinessData | null>(null);
+  const [showAgentSetupModal, setShowAgentSetupModal] = useState<BusinessData | null>(null);
+  const [showLoginConfirmModal, setShowLoginConfirmModal] = useState<BusinessData | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 20;
 
@@ -312,18 +314,26 @@ const AdminPage: React.FC = () => {
     );
   };
 
-  // Handle login as user
-  const handleLoginAsUser = async (business: BusinessData) => {
-    if (!window.confirm(`Are you sure you want to login as ${business.businessName}?`)) {
-      return;
-    }
+  // Handle login as user - show confirmation modal
+  const handleLoginAsUser = (business: BusinessData) => {
+    setShowLoginConfirmModal(business);
+  };
+
+  // Confirm login as user
+  const confirmLoginAsUser = async () => {
+    if (!showLoginConfirmModal) return;
+    
+    const business = showLoginConfirmModal;
+    setShowLoginConfirmModal(null);
     
     try {
       // Store admin session info before logging in as user
+      // Also store the current auth token so we can restore it later
       const adminSession = {
         isAdminSession: true,
         adminId: currentAdminId,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        returnUrl: '/admin'
       };
       localStorage.setItem('adminSession', JSON.stringify(adminSession));
       
@@ -337,12 +347,12 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  // Handle view agent setup details - navigate to appropriate page
+  // Handle view agent setup details
   const handleViewAgentSetup = (business: BusinessData) => {
     const isComplete = isAgentSetupComplete(business);
     if (isComplete) {
-      // Navigate to update agent setup page with userId
-      navigate(`/update-agent-setup?userId=${business.id}`);
+      // Show modal with agent setup details
+      setShowAgentSetupModal(business);
     } else {
       // Navigate to agent setup page with userId
       navigate(`/agent-setup?userId=${business.id}`);
@@ -500,24 +510,22 @@ const AdminPage: React.FC = () => {
                   </td>
                   <td>
                     <div className="agent-setup-cell">
-                      {business.agentSetup ? (
-                        <button
-                          className={`agent-setup-btn ${isAgentSetupComplete(business) ? 'complete' : 'incomplete'}`}
+                      {business.agentSetup && isAgentSetupComplete(business) ? (
+                        <span
+                          className="agent-setup-status complete"
                           onClick={() => handleViewAgentSetup(business)}
-                          title={isAgentSetupComplete(business) ? 'View and update agent setup' : 'Complete agent setup'}
+                          title="Click to view agent setup details"
+                          style={{ cursor: 'pointer' }}
                         >
-                          <Bot size={16} />
-                          {isAgentSetupComplete(business) ? 'Complete' : 'Incomplete'}
-                        </button>
+                          Complete
+                        </span>
                       ) : (
-                        <button
-                          className="agent-setup-btn not-configured"
-                          onClick={() => handleViewAgentSetup(business)}
-                          title="Configure agent setup"
+                        <span
+                          className="agent-setup-status not-configured"
+                          title="Agent setup not configured"
                         >
-                          <Bot size={16} />
                           Not Configured
-                        </button>
+                        </span>
                       )}
                     </div>
                   </td>
@@ -875,6 +883,141 @@ const AdminPage: React.FC = () => {
               >
                 <Trash2 size={18} />
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Agent Setup Details Modal */}
+      {showAgentSetupModal && showAgentSetupModal.agentSetup && (
+        <div className="modal-overlay" onClick={() => setShowAgentSetupModal(null)}>
+          <div className="modal-content agent-setup-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Agent Setup Details - {showAgentSetupModal.businessName}</h2>
+              <button
+                className="modal-close-btn"
+                onClick={() => setShowAgentSetupModal(null)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="agent-setup-details">
+                <div className="detail-section">
+                  <h3>Agent Configuration</h3>
+                  <div className="detail-grid">
+                    <div className="detail-item">
+                      <label>Agent Name</label>
+                      <p>{showAgentSetupModal.agentSetup?.agentName || <span className="not-filled">Not filled</span>}</p>
+                    </div>
+                    <div className="detail-item">
+                      <label>Agent Voice</label>
+                      <p>
+                        {showAgentSetupModal.agentSetup?.agentVoice ? (
+                          <span className="badge">{showAgentSetupModal.agentSetup.agentVoice === 'male' ? 'Male' : 'Female'}</span>
+                        ) : (
+                          <span className="not-filled">Not filled</span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="detail-item">
+                      <label>Agent Language</label>
+                      <p>{showAgentSetupModal.agentSetup?.agentLanguage || <span className="not-filled">Not filled</span>}</p>
+                    </div>
+                    <div className="detail-item">
+                      <label>Welcome Message</label>
+                      <p>{showAgentSetupModal.agentSetup?.welcomeMessage || <span className="not-filled">Not filled</span>}</p>
+                    </div>
+                    <div className="detail-item full-width">
+                      <label>Agent Flow</label>
+                      <p>{showAgentSetupModal.agentSetup?.agentFlow || <span className="not-filled">Not filled</span>}</p>
+                    </div>
+                    <div className="detail-item full-width">
+                      <label>Customer Details Required</label>
+                      <p>{showAgentSetupModal.agentSetup?.customerDetails || <span className="not-filled">Not filled</span>}</p>
+                    </div>
+                    <div className="detail-item full-width">
+                      <label>Transfer Call Conditions</label>
+                      <p>{showAgentSetupModal.agentSetup?.transferCall || <span className="not-filled">Not filled</span>}</p>
+                    </div>
+                    <div className="detail-item full-width">
+                      <label>Ending Message</label>
+                      <p>{showAgentSetupModal.agentSetup?.endingMessage || <span className="not-filled">Not filled</span>}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="detail-section">
+                  <h3>Setup Status</h3>
+                  <div className="status-summary">
+                    <p>
+                      <strong>Status:</strong>{' '}
+                      <span className={isAgentSetupComplete(showAgentSetupModal) ? 'status-complete' : 'status-incomplete'}>
+                        {isAgentSetupComplete(showAgentSetupModal) ? 'Complete' : 'Incomplete'}
+                      </span>
+                    </p>
+                    <p>
+                      <strong>Created:</strong> {showAgentSetupModal.agentSetup?.createdAt ? formatDate(showAgentSetupModal.agentSetup.createdAt) : 'N/A'}
+                    </p>
+                    <p>
+                      <strong>Last Updated:</strong> {showAgentSetupModal.agentSetup?.updatedAt ? formatDate(showAgentSetupModal.agentSetup.updatedAt) : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="modal-btn secondary"
+                onClick={() => setShowAgentSetupModal(null)}
+              >
+                Close
+              </button>
+              <button
+                className="modal-btn primary"
+                onClick={() => {
+                  setShowAgentSetupModal(null);
+                  navigate(`/update-agent-setup?userId=${showAgentSetupModal.id}`);
+                }}
+              >
+                <Edit2 size={16} />
+                Edit Agent Setup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Login Confirmation Modal */}
+      {showLoginConfirmModal && (
+        <div className="modal-overlay" onClick={() => setShowLoginConfirmModal(null)}>
+          <div className="delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-confirm-icon" style={{ background: '#3b82f6', color: 'white' }}>
+              <LogIn size={48} />
+            </div>
+            <h2>Login as User</h2>
+            <p className="delete-confirm-message">
+              Are you sure you want to login as
+              <strong> "{showLoginConfirmModal.businessName}"</strong>?
+            </p>
+            <p className="delete-confirm-warning" style={{ background: '#dbeafe', color: '#1e40af', border: '1px solid #93c5fd' }}>
+              <AlertTriangle size={16} />
+              You will be logged in as this user. Use "Back to Admin" button to return.
+            </p>
+            <div className="delete-confirm-actions">
+              <button
+                className="delete-confirm-btn cancel"
+                onClick={() => setShowLoginConfirmModal(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="delete-confirm-btn delete"
+                onClick={confirmLoginAsUser}
+                style={{ background: '#3b82f6', borderColor: '#3b82f6' }}
+              >
+                <LogIn size={18} />
+                Login
               </button>
             </div>
           </div>

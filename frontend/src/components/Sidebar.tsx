@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Shield, User, LogOut, ArrowLeftCircle } from 'lucide-react';
 import api from '../config/api';
 import toast from 'react-hot-toast';
+import { adminReturnToAdmin } from '../services/apis/authAPI';
 
 interface SidebarProps {
   activePage?: string;
@@ -48,16 +49,37 @@ const Sidebar = ({ activePage }: SidebarProps) => {
   // Handle back to admin
   const handleBackToAdmin = async () => {
     try {
-      // Clear admin session
+      // Get admin session info
+      const storedAdminSession = localStorage.getItem('adminSession');
+      if (!storedAdminSession) {
+        toast.error('Admin session not found');
+        navigate('/admin', { replace: true });
+        return;
+      }
+
+      const session = JSON.parse(storedAdminSession);
+      const adminId = session.adminId;
+
+      if (!adminId) {
+        toast.error('Admin ID not found');
+        localStorage.removeItem('adminSession');
+        navigate('/admin', { replace: true });
+        return;
+      }
+
+      // Restore admin session
+      await adminReturnToAdmin({ adminId: Number(adminId) });
+      
+      // Clear admin session from localStorage
       localStorage.removeItem('adminSession');
-      // Logout current user session
-      await api.post('/user/logout');
-      // Navigate to admin page
-      navigate('/admin', { replace: true });
+      
       toast.success('Returned to admin panel');
+      // Navigate to admin page
+      window.location.href = '/admin';
     } catch (error: any) {
       console.error('Error returning to admin:', error);
-      // Still navigate to admin page even if logout fails
+      toast.error(error.message || 'Failed to return to admin');
+      // Still navigate to admin page even if restore fails
       localStorage.removeItem('adminSession');
       navigate('/admin', { replace: true });
     }

@@ -4955,6 +4955,31 @@ input:checked + .toggle-slider:before {
     color: white;
 }
 
+.agent-setup-status {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.agent-setup-status.complete {
+    background-color: #10b981;
+    color: white;
+}
+
+.agent-setup-status.complete:hover {
+    background-color: #059669;
+    transform: translateY(-1px);
+}
+
+.agent-setup-status.not-configured {
+    background-color: #ef4444;
+    color: white;
+    cursor: default;
+}
+
 .actions-cell {
     display: flex;
     align-items: center;

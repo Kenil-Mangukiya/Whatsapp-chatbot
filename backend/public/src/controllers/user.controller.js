@@ -662,6 +662,52 @@ export const adminSaveAgentSetup = asyncHandler(async (req, res) => {
     );
 });
 
+// Admin Return to Admin Session (Restore admin session)
+export const adminReturnToAdmin = asyncHandler(async (req, res) => {
+    const currentUserId = req.userId;
+    
+    if (!currentUserId) {
+        throw new apiError(401, "Authentication required");
+    }
+    
+    // Get admin ID from request body (stored in localStorage)
+    const { adminId } = req.body;
+    
+    if (!adminId) {
+        throw new apiError(400, "Admin ID is required");
+    }
+    
+    // Verify the admin exists and is actually an admin
+    const admin = await AuthUser.findByPk(adminId);
+    if (!admin || admin.role !== 'admin') {
+        throw new apiError(403, "Invalid admin ID or user is not an admin");
+    }
+    
+    // Generate token for the admin
+    const token = generateToken(admin.id, admin.phoneNumber, false);
+    
+    // Set cookie for the admin
+    res.cookie('authToken', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+    
+    return res.status(200).json(
+        new apiResponse(200, "Returned to admin session successfully", {
+            user: {
+                id: admin.id,
+                phoneNumber: admin.phoneNumber,
+                businessName: admin.businessName,
+                fullName: admin.fullName,
+                role: admin.role
+            },
+            token: token
+        })
+    );
+});
+
 // Admin Login As User (Admin only)
 export const adminLoginAsUser = asyncHandler(async (req, res) => {
     const currentAdminId = req.userId;
