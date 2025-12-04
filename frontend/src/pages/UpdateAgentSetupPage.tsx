@@ -117,7 +117,7 @@ const UpdateAgentSetupPage: React.FC<AgentSetupPageProps> = ({ isActive }) => {
 
     // Only fetch if we've checked admin status (or if no userId is provided)
     if (!userId || isAdmin !== null || adminSession !== null) {
-      fetchAgentSetup();
+    fetchAgentSetup();
     }
   }, [userId, isAdmin, adminSession]);
 
@@ -189,7 +189,7 @@ const UpdateAgentSetupPage: React.FC<AgentSetupPageProps> = ({ isActive }) => {
     if (userId && (isAdmin || adminSession)) {
       navigate('/admin');
     } else {
-      navigate('/dashboard');
+    navigate('/dashboard');
     }
   };
 
@@ -226,7 +226,7 @@ const UpdateAgentSetupPage: React.FC<AgentSetupPageProps> = ({ isActive }) => {
                 {/* Header */}
                 <div className="mb-10">
                   <div className="flex items-center justify-between mb-4">
-                    <button
+                  <button
                       onClick={() => {
                         if (userId && (isAdmin || adminSession)) {
                           navigate('/admin');
@@ -235,10 +235,10 @@ const UpdateAgentSetupPage: React.FC<AgentSetupPageProps> = ({ isActive }) => {
                         }
                       }}
                       className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-                    >
-                      <ArrowLeft size={20} />
+                  >
+                    <ArrowLeft size={20} />
                       <span>{userId && (isAdmin || adminSession) ? 'Back to Admin' : 'Back'}</span>
-                    </button>
+                  </button>
                     {userId && (isAdmin || adminSession) && (
                       <div className="text-sm text-gray-500 bg-blue-50 px-3 py-1 rounded-md">
                         Admin View - User ID: {userId}

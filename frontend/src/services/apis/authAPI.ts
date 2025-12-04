@@ -218,9 +218,9 @@ export const saveAgentSetup = async (data: AgentSetupData, userId?: number) => {
       console.log("Save agent setup response (admin):", response);
       return response;
     } else {
-      const response: any = await api.post('/user/agent-setup', data);
-      console.log("Save agent setup response:", response);
-      return response;
+    const response: any = await api.post('/user/agent-setup', data);
+    console.log("Save agent setup response:", response);
+    return response;
     }
   } catch (error) {
     throw getErrorDetails(error);
@@ -235,10 +235,10 @@ export const getAgentSetup = async (userId?: number): Promise<{ data: AgentSetup
       const agentSetup = response?.data?.agentSetup || null;
       return { data: agentSetup };
     } else {
-      const response: any = await api.get('/user/me');
-      const user = response?.data?.user || response?.user;
-      const agentSetup = user?.agentSetup || null;
-      return { data: agentSetup };
+    const response: any = await api.get('/user/me');
+    const user = response?.data?.user || response?.user;
+    const agentSetup = user?.agentSetup || null;
+    return { data: agentSetup };
     }
   } catch (error) {
     throw getErrorDetails(error);

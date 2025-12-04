@@ -336,7 +336,7 @@ const LoginPage = () => {
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <img
-              src="/html/Untitled-2-04.webp"
+              src="/public/Untitled-2-04.webp"
               alt="RoadAI Assistant"
               className="h-12 w-auto"
             />

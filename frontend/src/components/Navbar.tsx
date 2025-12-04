@@ -48,7 +48,7 @@ const Navbar = () => {
       <div className="nav-wrapper">
         <div className="logo">
           <img
-            src="/html/Untitled-2-04.webp"
+            src="/public/Untitled-2-04.webp"
             alt="RoadAI Assistant"
             className="app-logo-image"
           />
