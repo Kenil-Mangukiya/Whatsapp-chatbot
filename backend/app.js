@@ -9,6 +9,7 @@ import { userRoutes } from "./public/src/routes/user.route.js";
 import config from "./public/src/config/config.js";
 import bolnaRoutes from "./public/src/routes/bolna.route.js";
 import apiError from "./public/src/utils/apiError.js";
+import plivoRouter from "./public/src/routes/plivo.route.js";
 
 const app = express();
 
@@ -25,7 +26,7 @@ app.use(cookieParser());
 
 // Routes
 app.use('/', healthRoutes);
-app.use('/api', webhookRoutes, retellWebhookRoutes, locationRoutes, bolnaRoutes);
+app.use('/api', webhookRoutes, retellWebhookRoutes, locationRoutes, bolnaRoutes, plivoRouter);
 app.use('/api/user', userRoutes);
 // Basic route
 app.get('/', (req, res) => {
